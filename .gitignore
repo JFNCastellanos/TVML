@@ -4,3 +4,4 @@ Poetry_tutorial
 .ipynb_checkpoints
 __pycache__/
 sap/
+confs/

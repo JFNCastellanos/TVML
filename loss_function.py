@@ -26,7 +26,8 @@ class CustomLoss(nn.Module):
                 #Evaluate 
                 loss += np.linalg.norm( (self.test_vectors[i,tv] - ops.P_Pdagg(self.test_vectors[i,tv])) )
             #loss = np.linealg.norm(test_vectors - P_Pdagg(test_vectors)) #|| . ||₂ (l2-norm)
-        return loss
+            #We normalize the loss function, otherwise the minimization is unstable.
+        return loss/(self.batch_size*var.NV)
  
 class CustomLossTorch(nn.Module):
     """
@@ -60,4 +61,4 @@ class CustomLossTorch(nn.Module):
                 loss = loss + torch.linalg.norm(diff)   # square to match ∥·∥₂² if you like
 
         # loss is a scalar tensor (still attached to the graph)
-        return loss
+        return loss/(batch_size*var.NV)

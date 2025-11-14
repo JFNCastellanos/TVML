@@ -14,7 +14,7 @@ def init():
     BLOCKS_X, BLOCKS_T = 2, 2
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
-    NV = 15    #test vectors
+    NV = 14    #test vectors
     N = 2*NX*NT
 
 def print_parameters():
