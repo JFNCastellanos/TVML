@@ -11,21 +11,30 @@ import parameters as var
 neural_net = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
             #state size 4 x NT x NX
-            nn.Conv2d(4, 64, 2, 2, 0),
-            nn.BatchNorm2d(64),
-            #state size 64 x NT/2 x NX/2
-            nn.PReLU(64),
-            nn.Conv2d(64, 128, 2, 2, 0),
+            nn.Conv2d(4, 128, 2, 2, 0),
             nn.BatchNorm2d(128),
             nn.PReLU(128),
-            # state size. ``128 x NT/4 x NX/4``
-            nn.ConvTranspose2d(128, 64, 2, 2, 0),
+            #state size 128 x NT/2 x NX/2
+            nn.Conv2d(128, 64, 2, 2, 0),
             nn.BatchNorm2d(64),
-            # state size. ``64 x NT/2 x NX/2``,
             nn.PReLU(64),
+            #state size 64 x NT/4 x NX/4
+            nn.Conv2d(64, 32, 2, 2, 0),
+            nn.BatchNorm2d(32),
+            nn.PReLU(32),
+            #state size 32 x NT/8 x NX/8
+            nn.ConvTranspose2d(32, 64, 2, 2, 0),
+            nn.BatchNorm2d(64),
+            nn.PReLU(64),
+            # state size 64 x NT/4 x NX/4
+            nn.ConvTranspose2d(64, 64, 2, 2, 0),
+            nn.BatchNorm2d(64),
+            nn.PReLU(64),
+            # state size 64 x NT/2 x NX/2
             nn.ConvTranspose2d(64, 4*var.NV, 2, 2, 0),
-            nn.PReLU(4*var.NV)
-            # state size. ``4*Nv x NT x NX``, (real, imaginary part and two spin components)
+            nn.BatchNorm2d(4*var.NV),
+            nn.Softsign()
+            # state size. 4*Nv x NT x NX, (real, imaginary part and two spin components)
 
 )
 

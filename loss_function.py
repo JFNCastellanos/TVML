@@ -32,7 +32,7 @@ class CustomLoss(nn.Module):
 class CustomLossTorch(nn.Module):
     """
     Custom loss function
-    sum_n ||  ( I-PP^+(fn[Uμ]) )fn[Uμ] ||₂
+    sum_n || ( I-PP^+(fn[Uμ]) )fn[Uμ] ||₂
     The class is defined as subclass of nn.Module
     """
     def __init__(self):
@@ -46,7 +46,6 @@ class CustomLossTorch(nn.Module):
         """
         batch_size = pred.shape[0]
         loss = 0.0
-
         for i in range(batch_size):
             # the Operators class must accept a **torch** tensor, not a numpy array
             ops = op.Operators(var.BLOCKS_X, var.BLOCKS_T, pred[i])   # <-- pred[i] is a torch Tensor
