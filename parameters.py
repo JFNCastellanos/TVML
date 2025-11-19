@@ -1,11 +1,12 @@
 import utils as utils
 import numpy as np
+import torch
 
 def init():
     """
     Lattice parameters, gauge coupling, bare mass, number of configurations to load, lattice blocking, number of test vectors, etc.
     """
-    global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N
+    global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP
     BETA, NX, NT= 2, 32, 32
     M0 = -0.1884 
     M0_STRING = utils.formatt(M0) #format string
@@ -16,7 +17,10 @@ def init():
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
     NV = 14    #test vectors
     N = 2*NX*NT
-
+    NGPU = 1
+    DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
+    TRAIN_PROP = 0.9 #Proportion of total examples used for training
+    
 def print_parameters():
     print("*********** Configuration parameters ***********")
     print("* β={0}, Nx={1}, Nt={2}".format(BETA,NX,NT))
@@ -25,4 +29,5 @@ def print_parameters():
     print("* blocks_x={0}, blocks_t={1} (for the aggregation)".format(BLOCKS_X,BLOCKS_T))
     print("* Nv={0}".format(NV))
     print("* Number of confs={0}".format(NO_CONFS))
+    print("* Confs used for training={0}".format(int(TRAIN_PROP*NO_CONFS)))
     print("************************************************")

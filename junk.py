@@ -148,3 +148,53 @@ print("Output shape",output.shape)
 print("Predicted shape",ut.output_size(16,2,2,0,transpose=False))
 
 output_size(16,2,2,0,transpose=True)
+
+
+#-------------------Check that the dataloader preserves the indexing of my training examples-------------#
+A = []
+for batch_id, batch in enumerate(train_loader):                          
+    confsID = batch[2].detach().cpu().numpy()
+    A.append(list(confsID))
+for batch_id, batch in enumerate(test_loader):                        
+    confsID = batch[2].detach().cpu().numpy()
+    A.append(list(confsID))
+B = []
+for i in range(len(A)):
+    B = B + A[i]
+B = np.array(B)
+np.sort(B)
+
+
+#--------- Cross checking test vectors from python to binary format --------- # 
+confs_batch = first_batch[0].to(device)
+pred = model(confs_batch)                  # (B, 4*NV, NT, NX)
+B = pred.shape[0]
+pred = pred.view(B, var.NV, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
+# Build complex tensor (B,NV,2,NT,NX)
+real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
+imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)   # (B,NV,2,NT,NX)
+pred_complex = torch.complex(real, imag).detach().cpu().numpy()
+value = pred_complex[0,0,mu,t,x]
+
+file_path = "fake_tv/file.bin"
+t, x, mu = 0,0,0
+Re = np.real(value)
+Im = np.imag(value)
+
+print(t,x,mu,Re,Im)
+fmt = "<3i2d"                     # little‑endian, 3 ints + 2 doubles
+data = struct.pack(fmt, int(x), int(t), int(mu), float(Re), float(Im))
+with open(file_path, "wb") as f:
+    f.write(data)
+# ---------- reading ----------
+int_fmt = "<3i"
+dbl_fmt = "<2d"
+
+int_size = struct.calcsize(int_fmt)
+dbl_size = struct.calcsize(dbl_fmt)
+
+with open(file_path, "rb") as f:
+    x_r, t_r, mu_r = struct.unpack(int_fmt, f.read(int_size))
+    re_r, im_r    = struct.unpack(dbl_fmt, f.read(dbl_size))
+
+print(x_r, t_r, mu_r, re_r, im_r)

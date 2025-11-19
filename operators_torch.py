@@ -31,6 +31,7 @@ class Operators():
         self.t_elements = self.nt // self.blocks_t
         self.tv_orth() #Orthonormalizes the set of test vectors
         #after orthonormalization, every test vector's norm is (globally) sqrt(2*number_of_lattice_blocks)
+        self.device = var.DEVICE
 
     def getTestVectors(self):
         return self.test_vectors
@@ -40,7 +41,7 @@ class Operators():
     """
     @classmethod
     def rand_tv(cls,blocks_x,blocks_t):
-        test_vectors = torch.zeros(var.NV,2,var.NT,var.NX,dtype=complex)
+        test_vectors = torch.zeros(var.NV,2,var.NT,var.NX,dtype=complex,device = self.device)
         #random.seed(0)
         for tv in range(var.NV):
             for nt in range(var.NT):
@@ -73,7 +74,7 @@ class Operators():
         block_t: block index on t-direction
         block_x: block index on x-direction
         """   
-        v = torch.zeros(2,self.nt,self.nx,dtype=complex)
+        v = torch.zeros(2,self.nt,self.nx,dtype=complex,device = self.device)
         for block in range(self.nb):
             block_x = block // self.blocks_x
             block_t = block % self.blocks_t 
@@ -116,7 +117,7 @@ class Operators():
         block_t: block index on t-direction
         block_x: block index on x-direction
         """   
-        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=complex)
+        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=complex,device = self.device)
         for block in range(self.nb):
             block_x = block // self.blocks_x
             block_t = block % self.blocks_t
@@ -139,7 +140,7 @@ class Operators():
         Returns:
             * vector on the coarse grid
         """
-        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=complex)
+        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=complex,device = self.device)
         temp = self.Pdagg_v(v)
         return self.P_vc(temp)
 
@@ -152,7 +153,7 @@ class Operators():
             * vector on the fine grid
         NOTE: Given the definition of the interpolator, this has to return vc, i.e. it acts as the identity. 
         """
-        v = torch.zeros(2,self.nt,self.nx,dtype=complex)
+        v = torch.zeros(2,self.nt,self.nx,dtype=complex,device = self.device)
         temp = self.P_vc(vc)
         return self.Pdagg_v(temp)
 
