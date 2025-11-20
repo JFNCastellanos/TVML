@@ -37,125 +37,85 @@ int main(int argc, char **argv) {
     //-0.1023;//-0.0933;//-0.18840579710144945; //0.0709
     double m0 = -0.18840579710144945; 
     double beta = 2;
-    int nconf = 0;
-
-    //Open conf from file//
-    GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
-    GConf.initialize();
+    mass::m0 = m0;
+    beta::beta = beta;
 
     
     std::string confFile;
     std::string rhsFile;
-    if (rank == 0){
-         //---Input data---//
-        std::cout << "Nx " << LV::Nx << " Nt " << LV::Nt << std::endl;
-        std::cout << "Configuration file path: ";
-        std::cin >> confFile;
-        //std::cout << "RHS file path: ";
-        //std::cin >> rhsFile;
-        std::cout << " " << std::endl;
-    }
-   
+
+    
     MPI_Bcast(&beta, 1, MPI_DOUBLE,  0, MPI_COMM_WORLD);
     MPI_Bcast(&m0, 1, MPI_DOUBLE,  0, MPI_COMM_WORLD);
-    MPI_Bcast(&nconf, 1, MPI_INT,  0, MPI_COMM_WORLD);
-    mass::m0 = m0;
-    beta::beta = beta;
 
-    int filename_len = 0;
-    if (rank == 0) {
-        filename_len = static_cast<int>(confFile.size()) + 1; // include null terminator
-    }
-    MPI_Bcast(&filename_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    std::vector<char> filename_buf(filename_len);
-    if (rank == 0) {
-        std::memcpy(filename_buf.data(), confFile.c_str(), filename_len);
-    }
-    MPI_Bcast(filename_buf.data(), filename_len, MPI_CHAR, 0, MPI_COMM_WORLD);
-    if (rank != 0) {
-        confFile.assign(filename_buf.data());
-    }
 
-    /*
-    filename_len = 0;
-    if (rank == 0) {
-        filename_len = static_cast<int>(rhsFile.size()) + 1; // include null terminator
-    }
-    MPI_Bcast(&filename_len, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    std::vector<char> rhsname_buf(filename_len);
-    if (rank == 0) {
-        std::memcpy(rhsname_buf.data(), rhsFile.c_str(), filename_len);
-    }
-    MPI_Bcast(rhsname_buf.data(), filename_len, MPI_CHAR, 0, MPI_COMM_WORLD);
-    if (rank != 0) {
-        rhsFile.assign(rhsname_buf.data());
-    }
-    */
-           
-    
-    MPI_Barrier(MPI_COMM_WORLD);
-    //Parameters in variables.cpp
-    if (rank == 0){
-        printParameters();
-        std::cout << "Conf read from " << confFile << std::endl;
-        //std::cout << "rhs read from " << rhsFile << std::endl;
-    }
-    
-    const spinor x0(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0)); //Intial guesss
-    spinor rhs(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
 
-    GConf.readBinary(confFile);
-    random_rhs(rhs,0);
-    //readBinaryRhs(rhs,rhsFile);
-    
-    
-    int level = 0;
     std::vector<int> confsID;
     std::ostringstream confsIDfile;
     confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt 
 		<< "/m-018/confFiles.txt";
     readConfsID(confsID,confsIDfile.str());
 
-
-    std::vector<spinor> test_vectors(LevelV::Ntest[level], spinor( LevelV::Nsites[level], c_vector (LevelV::DOF[level],0))); 
-
-    //for (int confID: confsID){
-    //        std::cout << confID << std::endl;
-    //    }
-    //}
-
-    int testID = 256;//confsID[0];
+    //mlearning::confID = confsID[0];
+    mlearning::confID = 256;
     
-    for(int tvID = 0; tvID < LevelV::Ntest[level]; tvID++){
-    //for(int tvID = 0; tvID < 1; tvID++){
-        std::ostringstream tv_file;
-        tv_file << "../../fake_tv/b2_32x32/m-018/conf" << testID << "_fake_tv" << tvID << ".tv";
-        readBinaryTv(tv_file.str(),test_vectors,tvID,level);
-    }
+    std::ostringstream gauge_conf_file;
+    gauge_conf_file << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b"
+     << beta << "_" << LV::Nx << "x" << LV::Nt 
+		<< "/m-018/"
+        <<
+        "2D_U1_Ns"<< LV::Nx <<"_Nt" << LV::Nt << "_b" 
+        << format(beta::beta).c_str() << "_m" 
+        << format(mass::m0).c_str() << "_" 
+        << mlearning::confID << ".ctxt";
+
+
+
+    GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
+    GConf.readBinary(gauge_conf_file.str());
+
+
+    //Parameters in variables.cpp
     if (rank == 0){
-        checkTv(test_vectors,level);
-    }   
+        printParameters();
+    }
     
-    if (rank == 0) std::cout << "Conf ID for testing " << testID << std::endl;
+    const spinor x0(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0)); //Intial guesss
+    spinor rhs(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+
     
-    /*
+    
+    random_rhs(rhs,0);
+    //readBinaryRhs(rhs,rhsFile);
+    
+    
 
     //Solution buffers
     spinor x_bi(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-    //spinor x_cg(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+    spinor x_cg(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
     spinor xFAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+    spinor xFAMGSetup2(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
     //spinor xAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
 
+    if (rank == 0) std::cout << "Testing with confID " << mlearning::confID << std::endl;
     
     Tests test(GConf, rhs, x0 ,m0);
     if (rank == 0){
         test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
-        //test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
+        test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
-    test.fgmresAMG(xFAMG, true);
-    */
+    int setup = 0;
+    test.fgmresAMG(xFAMG, true,setup);
+    
+    if (rank == 0){
+        std::cout << "********************************************************************" << std::endl;
+        std::cout << " Reading test vectors from file " << std::endl;
+    }
+
+    setup = 1;
+    test.fgmresAMG(xFAMGSetup2, true,setup);
 
 
     MPI_Finalize();

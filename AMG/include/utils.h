@@ -32,20 +32,18 @@
     infile.close();
 }
       
-inline void checkTv(std::vector<spinor>& test_vectors,const int level){
+inline void checkTv(std::vector<spinor>& test_vectors,const int level,const int tv){
     //Check that test vectors here coincide with what I generated in Python
     int n;
-    for (int tv = 0; tv < LevelV::Ntest[level]; tv++) {
-    //for (int tv = 0; tv < 1; tv++) {
-		for (int x = 0; x < LevelV::NxSites[level]; x++) {
-        for (int t = 0; t < LevelV::NtSites[level]; t++) {
-            n = x * LevelV::NtSites[level] + t;
-		    for (int dof = 0; dof < LevelV::DOF[level]; dof++) {
+	for (int x = 0; x < LevelV::NxSites[level]; x++) {
+    for (int t = 0; t < LevelV::NtSites[level]; t++) {
+        n = x * LevelV::NtSites[level] + t;
+		for (int dof = 0; dof < LevelV::DOF[level]; dof++) {
                 std::cout << "tv " << tv << " x " << x << " t " << t << " dof " << dof << " value " << test_vectors[tv][n][dof] << std::endl;
-		    }
 		}
-	    }
-    }
+	}
+	}
+    
 }
 
 

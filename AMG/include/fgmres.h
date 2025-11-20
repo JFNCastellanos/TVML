@@ -3,6 +3,7 @@
 
 #include <utility> //for std::move
 #include "dirac_operator.h"
+#include "mpi.h"
 
 /*
 	FGMRES 

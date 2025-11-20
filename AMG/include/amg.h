@@ -111,6 +111,7 @@ class FGMRES_AMG : public FGMRES {
     amg.setUpPhase(AMGV::Nit); //test vectors intialization
     endT = MPI_Wtime();
     elapsed_time = endT - startT;
+    if (rank == 0)
     std::cout << "[MPI Process " << rank << "] Elapsed time for Set-up phase = " << elapsed_time << " seconds" << std::endl;   
     //---------------------------//
     //Tests

@@ -3,6 +3,9 @@
 
 //------Class FGMRES implementation------//
 int FGMRES::fgmres(const spinor& phi, const spinor& x0, spinor& x,const bool& print_message,const bool save_res) { 
+    int rank; 
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
     setZeros();
     int k = 0; //Restart cycle)
     double err;
@@ -63,7 +66,7 @@ int FGMRES::fgmres(const spinor& phi, const spinor& x0, spinor& x,const bool& pr
 
         err = sqrt(std::real(dot(r, r)));
         if (err < tol* norm_phi) {
-            if (print_message == true) {
+            if (print_message == true && rank == 0) {
                 std::cout << "FGMRES converged in " << k + 1 << " cycles" << " Error " << err << std::endl;
                 std::cout << "With " << k*m + maxIt  << " iterations" <<  std::endl;
             }
