@@ -64,7 +64,9 @@ void Tests::SAP(spinor& x,const int iterations, const bool print){
 
 }
 
-int Tests::fgmresAMG(spinor& x, const bool print){
+int Tests::fgmresAMG(spinor& x, const bool print, const int setup){
+    //setup = 0 -> usual setup phase
+    AMGV::setup = setup;
     const bool save = false;
     int rank, size; 
     MPI_Comm_size(MPI_COMM_WORLD, &size);

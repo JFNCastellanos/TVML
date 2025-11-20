@@ -102,6 +102,7 @@ class FGMRES_AMG : public FGMRES {
     const GaugeConf& GConf,const double& m0) : FGMRES(dim1, dim2, m, restarts, tol), GConf(GConf),
     m0(m0), dim1(dim1), dim2(dim2), amg(GConf, m0, AMGV::nu1, AMGV::nu2) {
 
+
     //      Set up phase for AMG     //
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     double elapsed_time;

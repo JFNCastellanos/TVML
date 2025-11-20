@@ -8,7 +8,7 @@ def init():
     """
     global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP
     BETA, NX, NT= 2, 32, 32
-    M0 = -0.1884 
+    M0 = -0.18840579710144945 
     M0_STRING = utils.formatt(M0) #format string
     NO_CONFS = 1000 #number of confs to load
     M0_FOLDER = "m-018" #folder with confs

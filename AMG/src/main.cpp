@@ -12,40 +12,10 @@
 #include "mpi.h" //MPI
 #include "tests.h" //Class for testing
 
+
+
 #include <cstdint>
 #include <cstring>
-
-//mean of a vector
-template <typename T>
-double mean(std::vector<T> x){ 
-    double prom = 0;
-    for (T i : x) {
-        prom += i*1.0;
-    }   
-    prom = prom / x.size();
-    return prom;
-}
-
-template <typename T>
-double standard_deviation(const std::vector<T>& data) {
-    if (data.empty()) return 0.0;
-    double mean = std::accumulate(data.begin(), data.end(), 0.0) / data.size();
-    double sq_sum = 0.0;
-    for (const auto& val : data) {
-        sq_sum += (static_cast<double>(val) - mean) * (static_cast<double>(val) - mean);
-    }
-    return std::sqrt(sq_sum / data.size());
-}
-
-//Formats decimal numbers
-//For opening file with confs 
-static std::string format(const double& number) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(4) << number;
-    std::string str = oss.str();
-    str.erase(str.find('.'), 1); //Removes decimal dot 
-    return str;
-}
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
@@ -61,34 +31,28 @@ int main(int argc, char **argv) {
     Coordinates(); //Builds array with coordinates of the lattice points x * Nt + t
     boundary(); //Boundaries for every level
 
-    AMGV::cycle = 1; //K-cycle = 1, V-cycle = 0
+    AMGV::cycle = 0; //K-cycle = 1, V-cycle = 0
     AMGV::Nit = 0;
     AMGV::SAP_test_vectors_iterations = 4;
     //-0.1023;//-0.0933;//-0.18840579710144945; //0.0709
-    double m0 = mass::m0; 
-
+    double m0 = -0.18840579710144945; 
+    double beta = 2;
+    int nconf = 0;
 
     //Open conf from file//
     GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
     GConf.initialize();
 
-    double beta;
-    int nconf;
+    
     std::string confFile;
     std::string rhsFile;
     if (rank == 0){
          //---Input data---//
         std::cout << "Nx " << LV::Nx << " Nt " << LV::Nt << std::endl;
-        std::cout << "beta : ";
-        std::cin >> beta;
-        std::cout << "m0: ";
-        std::cin >> m0;
-        std::cout << "Configuration id: ";
-        std::cin >> nconf;
         std::cout << "Configuration file path: ";
         std::cin >> confFile;
-        std::cout << "RHS file path: ";
-        std::cin >> rhsFile;
+        //std::cout << "RHS file path: ";
+        //std::cin >> rhsFile;
         std::cout << " " << std::endl;
     }
    
@@ -96,6 +60,7 @@ int main(int argc, char **argv) {
     MPI_Bcast(&m0, 1, MPI_DOUBLE,  0, MPI_COMM_WORLD);
     MPI_Bcast(&nconf, 1, MPI_INT,  0, MPI_COMM_WORLD);
     mass::m0 = m0;
+    beta::beta = beta;
 
     int filename_len = 0;
     if (rank == 0) {
@@ -111,6 +76,7 @@ int main(int argc, char **argv) {
         confFile.assign(filename_buf.data());
     }
 
+    /*
     filename_len = 0;
     if (rank == 0) {
         filename_len = static_cast<int>(rhsFile.size()) + 1; // include null terminator
@@ -124,6 +90,7 @@ int main(int argc, char **argv) {
     if (rank != 0) {
         rhsFile.assign(rhsname_buf.data());
     }
+    */
            
     
     MPI_Barrier(MPI_COMM_WORLD);
@@ -131,42 +98,76 @@ int main(int argc, char **argv) {
     if (rank == 0){
         printParameters();
         std::cout << "Conf read from " << confFile << std::endl;
-        std::cout << "rhs read from " << rhsFile << std::endl;
+        //std::cout << "rhs read from " << rhsFile << std::endl;
     }
     
     const spinor x0(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0)); //Intial guesss
     spinor rhs(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
 
     GConf.readBinary(confFile);
-    readBinaryRhs(rhs,rhsFile);
+    random_rhs(rhs,0);
+    //readBinaryRhs(rhs,rhsFile);
     
+    
+    int level = 0;
+    std::vector<int> confsID;
+    std::ostringstream confsIDfile;
+    confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt 
+		<< "/m-018/confFiles.txt";
+    readConfsID(confsID,confsIDfile.str());
 
 
+    std::vector<spinor> test_vectors(LevelV::Ntest[level], spinor( LevelV::Nsites[level], c_vector (LevelV::DOF[level],0))); 
+
+    //for (int confID: confsID){
+    //        std::cout << confID << std::endl;
+    //    }
+    //}
+
+    int testID = 256;//confsID[0];
+    
+    for(int tvID = 0; tvID < LevelV::Ntest[level]; tvID++){
+    //for(int tvID = 0; tvID < 1; tvID++){
+        std::ostringstream tv_file;
+        tv_file << "../../fake_tv/b2_32x32/m-018/conf" << testID << "_fake_tv" << tvID << ".tv";
+        readBinaryTv(tv_file.str(),test_vectors,tvID,level);
+    }
+    if (rank == 0){
+        checkTv(test_vectors,level);
+    }   
+    
+    if (rank == 0) std::cout << "Conf ID for testing " << testID << std::endl;
+    
+    /*
 
     //Solution buffers
-    //spinor x_bi(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+    spinor x_bi(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
     //spinor x_cg(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
     spinor xFAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
     //spinor xAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
 
     
     Tests test(GConf, rhs, x0 ,m0);
-    //if (rank == 0){
-        //test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
+    if (rank == 0){
+        test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
         //test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
-    //}
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
     test.fgmresAMG(xFAMG, true);
-
+    */
 
 
     MPI_Finalize();
+
+    
 
     return 0;
 }
 
 //Four levels multigrid
+//The parameters file has the following information on each row
+//level, block_x, block_t, ntest, sap_block_x, sap_block_t
 //0 8 8 10 4 4
 //1 4 4 10 4 4
 //2 2 2 10 2 2

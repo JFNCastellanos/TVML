@@ -415,3 +415,14 @@ void Level::orthonormalize(){
 		}
 	} 	
 }
+
+void Level::readTv(){
+	for(int tvID = 0; tvID < LevelV::Ntest[level]; tvID++){
+        std::ostringstream tv_file;
+		tv_file << "../../fake_tv/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
+		<< "/m-018/conf" 
+		<< mlearning::confID << "_fake_tv" << tvID << ".tv";
+
+        readBinaryTv(tv_file.str(),interpolator_columns,tvID,level);
+    }
+}

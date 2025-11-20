@@ -7,6 +7,7 @@
 #include "dirac_operator.h"
 #include "gauge_conf.h"
 #include "sap.h"
+#include "utils.h"
 
 /*
     One level of the AMG method
@@ -277,6 +278,8 @@ public:
         //m = mx * t_elements + mt; //Index in the block
     }
 
+    //Reads a set of test vectors from outside of the class
+    void readTv();
 
 };
 

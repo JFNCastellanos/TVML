@@ -24,7 +24,7 @@ public:
     void CG(spinor& x);
     void FGMRES_sap(spinor &x,const bool print);
     void SAP(spinor& x,const int iterations,const bool print);
-    int fgmresAMG(spinor& x, const bool print);
+    int fgmresAMG(spinor& x, const bool print, const int setup);
     void multigrid(spinor& x, const bool print);
     
     void check_solution(const spinor& x_sol);

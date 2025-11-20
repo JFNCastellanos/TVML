@@ -17,8 +17,17 @@ extern double coarse_time; //Time spent in the coarse grid solver
 extern double smooth_time; //Time spent in the smoother
 extern double total_time; //Total time spent in the multigrid solver
 
+
+namespace  mlearning{
+    extern int confID;
+}
+
 namespace mass{
     extern double m0;
+}
+
+namespace beta{
+    extern double beta;
 }
 
 //------------Lattice parameters--------------//
@@ -62,6 +71,7 @@ namespace AMGV{
     extern int fgmres_k_cycle_restarts;
     extern double fgmres_k_cycle_tol;
     extern int cycle; //Cycling stratey. Cycle = 0 -> V-cycle, = 1 --> K-cycle
+    extern int setup; //setup = 0 -> do the setup as usual, any other value -> use set of given test vectors
 }
 
 namespace LevelV{

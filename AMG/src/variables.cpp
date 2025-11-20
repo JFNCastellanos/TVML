@@ -14,6 +14,13 @@ void Coordinates() {
 		}
 	}
 }
+namespace beta{
+    double beta = 1;
+}
+
+namespace mlearning{
+    int confID = 0;
+}
 
 namespace mass{
     double m0 = 0; //Default mass
@@ -72,6 +79,7 @@ namespace AMGV {
     double fgmres_k_cycle_tol = 0.1;
 
     int cycle = 0; //Cycling stratey. Cycle = 0 -> V-cycle, = 1 --> K-cycle
+    int setup = 0; //do the setup as usual, any other value -> use set of given test vectors
 }
 
 //--------------Parameters for outer FGMRES solver--------------//

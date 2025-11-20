@@ -9,6 +9,11 @@ void AlgebraicMG::setUpPhase(const int& Nit){
 	std::uniform_real_distribution<double> distribution(-1.0, 1.0); //mu, standard deviation
 	
 
+
+
+
+	if (AMGV::setup == 0){
+
 	//Generate test vectors at the fine level
 	for (int i = 0; i < LevelV::Ntest[0]; i++) {
 		for (int n = 0; n < LevelV::Nsites[0]; n++) {
@@ -83,6 +88,17 @@ void AlgebraicMG::setUpPhase(const int& Nit){
 		}
 	}
 	
+	}//close if
+
+	else{
+		for (int l = 0; l<AMGV::levels-1; l++){
+			//For a given set of test vectors we just do the local orthonormalization and create the coarse gauge links
+			levels[l]->readTv(); 
+			levels[l]->orthonormalize(); 
+			levels[l]->makeCoarseLinks(*levels[l+1]);
+		}
+	}
+
     if (rank == 0)std::cout << "Set-up phase finished" << std::endl;
 	
 }
