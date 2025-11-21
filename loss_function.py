@@ -7,7 +7,7 @@ import operators_torch as op
 class CustomLoss(nn.Module):
     """
     Custom loss function
-    sum_n ||  ( I-PP^+(fn[Uμ]) )fn[Uμ] ||₂
+    sum_n ||  ( I-PP^+(fn[Uμ]) )v_lambda ||₂
     The class is defined as subclass of nn.Module
     """
     def __init__(self,pred_test_vectors,test_vectors):
@@ -55,9 +55,7 @@ class CustomLossTorch(nn.Module):
                 #  P_Pdagg returns a tensor with the same shape as its input
                 corrected = ops.P_Pdagg(target[i, tv])                # shape (2, NT, NX)
                 diff = target[i, tv] - corrected
-
-                # torch.norm with p=2 gives the Frobenius (L2) norm for tensors
-                loss = loss + torch.linalg.norm(diff)   # square to match ∥·∥₂² if you like
-
+                loss = loss + torch.linalg.norm(diff)/torch.linalg.norm(target[i, tv])   
+                #loss = loss + torch.linalg.norm(diff)
         # loss is a scalar tensor (still attached to the graph)
         return loss/(batch_size*var.NV)

@@ -94,9 +94,10 @@ void AlgebraicMG::setUpPhase(const int& Nit){
 		for (int l = 0; l<AMGV::levels-1; l++){
 			//For a given set of test vectors we just do the local orthonormalization and create the coarse gauge links
 			levels[l]->readTv(); 
-			//if (rank == 0){
+			if (rank == 0){
 			//	checkTv(levels[l]->interpolator_columns,l,0);
-			//}
+				std::cout << "reading test vectors from files " << std::endl;
+			}
 			
 			levels[l]->orthonormalize(); 
 			levels[l]->makeCoarseLinks(*levels[l+1]);
