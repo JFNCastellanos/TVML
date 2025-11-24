@@ -17,7 +17,7 @@ def init():
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
     NV = 20   #test vectors
     N = 2*NX*NT
-    NGPU = 0
+    NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
     TRAIN_PROP = 0.9 #Proportion of total examples used for training
     

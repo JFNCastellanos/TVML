@@ -55,7 +55,7 @@ class CustomLossTorch(nn.Module):
                 #  P_Pdagg returns a tensor with the same shape as its input
                 corrected = ops.P_Pdagg(target[i, tv])                # shape (2, NT, NX)
                 diff = target[i, tv] - corrected
-                loss = loss + torch.linalg.norm(diff)/torch.linalg.norm(target[i, tv])   
+                loss = loss + torch.linalg.norm(diff)
                 #loss = loss + torch.linalg.norm(diff)
         # loss is a scalar tensor (still attached to the graph)
         return loss/(batch_size*var.NV)

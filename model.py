@@ -58,17 +58,53 @@ neural_net2 = nn.Sequential(
             # state size 64 x NT/2 x NX/2
             nn.ConvTranspose2d(64, 4*var.NV, 2, 2, 0),
             #nn.Hardtanh(min_val=-1.0, max_val=1.0)
-            nn.Tanh()
+            #nn.Tanh()
             # state size. 4*Nv x NT x NX, (real, imaginary part and two spin components)
+            #print(Re(Psi_0),Re(Psi_1),Im(Psi_0),Im(Psi_1)). 
+
+            #TODO:
+            #Create a layer to normalize the output without changing its shape
+
+    #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
 )
+
+neural_net3 = nn.Sequential(
+            #Conv2D(in_chan,out_chan,kernel,stride,padding)
+            #state size 4 x NT x NX
+            nn.Conv2d(4, 128, 2, 2, 0),
+            nn.BatchNorm2d(128),
+            nn.PReLU(128),
+            #state size 128 x NT/2 x NX/2
+            nn.Conv2d(128, 64, 2, 2, 0),
+            nn.BatchNorm2d(64),
+            nn.PReLU(64),
+            #state size 64 x NT/4 x NX/4
+            nn.Flatten(), #We flatten the output after the convolution
+    
+            nn.Linear(64 * var.NT//4 * var.NX//4, 256), #We multiply by the number of output channels
+            nn.BatchNorm1d(256),
+            nn.PReLU(256),
+    
+            nn.Linear(256, 64),
+            nn.BatchNorm1d(64),
+            nn.PReLU(64),
+    
+            nn.Linear(64, 4*var.NV*var.NT*var.NX),
+            #View((var.NV,4,var.NT,var.NX))
+            
+    #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
+)
+
 
 class TvGenerator(nn.Module):
     """
     CNN for generating test vectors
     """
-    def __init__(self, ngpu):
+    def __init__(self, ngpu,batch_size):
         super(TvGenerator, self).__init__()
         self.ngpu = ngpu
-        self.main = neural_net2 #neural_net
+        self.main = neural_net3 #neural_net
+        self.batch_size = batch_size
     def forward(self, input):
-        return self.main(input)
+        x = self.main(input)
+        return x.view(self.batch_size,var.NV,4,var.NT,var.NX)
