@@ -71,26 +71,50 @@ neural_net2 = nn.Sequential(
 neural_net3 = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
             #state size 4 x NT x NX
-            nn.Conv2d(4, 128, 2, 2, 0),
-            nn.BatchNorm2d(128),
-            nn.PReLU(128),
-            #state size 128 x NT/2 x NX/2
-            nn.Conv2d(128, 64, 2, 2, 0),
+            nn.Conv2d(4, 64, 2, 2, 0),
             nn.BatchNorm2d(64),
             nn.PReLU(64),
+            #state size 128 x NT/2 x NX/2
+            nn.Conv2d(64, 128, 2, 2, 0),
+            nn.BatchNorm2d(128),
+            nn.PReLU(128),
             #state size 64 x NT/4 x NX/4
             nn.Flatten(), #We flatten the output after the convolution
     
-            nn.Linear(64 * var.NT//4 * var.NX//4, 256), #We multiply by the number of output channels
+            nn.Linear(128 * var.NT//4 * var.NX//4, 256), #We multiply by the number of output channels
             nn.BatchNorm1d(256),
             nn.PReLU(256),
-    
-            nn.Linear(256, 64),
+
+            nn.Linear(256, 512),
+            nn.BatchNorm1d(512),
+            nn.PReLU(512),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.PReLU(512),
+
+            nn.Linear(512, 512),
+            nn.BatchNorm1d(512),
+            nn.PReLU(512),
+
+            nn.Linear(512, 256),
+            nn.BatchNorm1d(256),
+            nn.PReLU(256),
+
+            nn.Linear(256, 128), 
+            nn.BatchNorm1d(128),
+            nn.PReLU(128),
+
+            nn.Linear(128, 64), 
             nn.BatchNorm1d(64),
             nn.PReLU(64),
+            #nn.Hardtanh(min_val=-0.5, max_val=0.5),
     
+
             nn.Linear(64, 4*var.NV*var.NT*var.NX),
-            #View((var.NV,4,var.NT,var.NX))
+            #nn.Hardtanh(min_val=-1.0, max_val=1.0),
+            #nn.PReLU(4*var.NV*var.NT*var.NX),
+
             
     #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
 )

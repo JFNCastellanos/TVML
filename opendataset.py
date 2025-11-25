@@ -67,21 +67,21 @@ class ConfsDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         #idx is the conf index i.e. the conf file ends with ..._idx.ctxt
         conf_file = self.conf_files[idx]
-        gauge_conf = self.read_binary_conf(conf_file)
         tvectors = torch.zeros(var.NV,2,var.NT,var.NX,dtype=torch.complex128)
 
-        #gauge_conf = torch.load(self.conf_files[idx].replace('.ctxt','.pt'), mmap=True)
         #tvectors = torch.load(self.tv_files[idx].replace('.tv','.pt'), mmap=True)
-        
-        real = torch.tensor(np.real(gauge_conf), dtype=torch.float32)
-        imag = torch.tensor(np.imag(gauge_conf), dtype=torch.float32)
-        gauge_conf = torch.tensor(np.array([real,imag])).reshape(4, var.NT, var.NX)  
+
+        #Loading gauge conf
+        gauge_conf = torch.load(conf_file.replace('.ctxt','.pt'), mmap=True,weights_only=True)
+        gauge_conf = torch.cat([torch.real(gauge_conf), torch.imag(gauge_conf)], dim=0).float()   # [4, NT, NX]
+
         
         for tvID in range(var.NV):
-            vector = self.read_binary_conf(self.tv_files[idx][tvID])
-            real = torch.tensor(np.real(vector), dtype=torch.float64)
-            imag = torch.tensor(np.imag(vector), dtype=torch.float64)
-            tvectors[tvID] = torch.complex(real,imag).reshape(2, var.NT, var.NX) 
+            #vector = self.read_binary_conf(self.tv_files[idx][tvID])
+            #real = torch.tensor(np.real(vector), dtype=torch.float64)
+            #imag = torch.tensor(np.imag(vector), dtype=torch.float64)
+            #tvectors[tvID] = torch.complex(real,imag).reshape(2, var.NT, var.NX) 
+            tvectors[tvID] = torch.load(self.tv_files[idx][tvID].replace('.tv','.pt'), mmap=True,weights_only=True)
         return (gauge_conf,tvectors,idx)
 
     def __len__(self):
