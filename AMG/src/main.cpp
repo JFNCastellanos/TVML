@@ -48,7 +48,10 @@ int main(int argc, char **argv) {
     MPI_Bcast(&beta, 1, MPI_DOUBLE,  0, MPI_COMM_WORLD);
     MPI_Bcast(&m0, 1, MPI_DOUBLE,  0, MPI_COMM_WORLD);
 
-
+    //Parameters in variables.cpp
+    if (rank == 0){
+        printParameters();
+    }
 
     std::vector<int> confsID;
     std::ostringstream confsIDfile;
@@ -57,7 +60,12 @@ int main(int argc, char **argv) {
     readConfsID(confsID,confsIDfile.str());
 
     //mlearning::confID = confsID[0];
-    mlearning::confID = 256;
+    //mlearning::confID = 256;
+    
+
+    for (int id = 0; id < 5; id++){
+        mlearning::confID = confsID[id];
+        
     
     std::ostringstream gauge_conf_file;
     gauge_conf_file << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b"
@@ -75,10 +83,7 @@ int main(int argc, char **argv) {
     GConf.readBinary(gauge_conf_file.str());
 
 
-    //Parameters in variables.cpp
-    if (rank == 0){
-        printParameters();
-    }
+    
     
     const spinor x0(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0)); //Intial guesss
     spinor rhs(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
@@ -97,7 +102,7 @@ int main(int argc, char **argv) {
     spinor xFAMGSetup2(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
     //spinor xAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
 
-    if (rank == 0) std::cout << "Testing with confID " << mlearning::confID << std::endl;
+    if (rank == 0) std::cout << "/////////////// Testing with confID " << mlearning::confID << "///////////////" << std::endl;
     
     Tests test(GConf, rhs, x0 ,m0);
     if (rank == 0){
@@ -116,7 +121,9 @@ int main(int argc, char **argv) {
 
     setup = 1;
     test.fgmresAMG(xFAMGSetup2, true,setup);
-
+    if (rank == 0) std::cout << "********************************************************************" << std::endl;
+    
+    }
 
     MPI_Finalize();
 

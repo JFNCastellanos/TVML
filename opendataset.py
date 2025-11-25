@@ -12,14 +12,24 @@ def read_binary_conf(self,path):
     var.init()
     x, t, mu, vals = np.zeros(var.N), np.zeros(var.N), np.zeros(var.N), np.zeros(var.N,dtype=complex)
     #U[μ,t,x]
-    conf = np.zeros((2,var.NT,var.NX),dtype=complex)
-    with open(path, 'rb') as infile:
-        for i in range(var.N):
+    #conf = np.zeros((2,var.NT,var.NX),dtype=complex)
+    data = np.fromfile(path, dtype=[('x', 'i4'),
+                ('t', 'i4'),
+                ('mu', 'i4'),
+                ('re','f8'),
+                ('im','f8')])
+    conf = np.zeros((2, var.NT, var.NX), dtype=np.complex128)
+    conf[data['mu'], data['t'], data['x']] = data['re'] + 1j * data['im']
+
+    #with open(path, 'rb') as infile:
+    #    for i in range(var.N):
             #Real int values
-            x, t, mu = struct.unpack('3i', infile.read(12))
+    #        x, t, mu = struct.unpack('3i', infile.read(12))
             #Read double values
-            re, im = struct.unpack('2d', infile.read(16))
-            conf[mu,t,x] = complex(re,im)
+    #        re, im = struct.unpack('2d', infile.read(16))
+    #        conf[mu,t,x] = complex(re,im)
+
+            
     return conf
 
 
@@ -59,7 +69,10 @@ class ConfsDataset(torch.utils.data.Dataset):
         conf_file = self.conf_files[idx]
         gauge_conf = self.read_binary_conf(conf_file)
         tvectors = torch.zeros(var.NV,2,var.NT,var.NX,dtype=torch.complex128)
-             
+
+        #gauge_conf = torch.load(self.conf_files[idx].replace('.ctxt','.pt'), mmap=True)
+        #tvectors = torch.load(self.tv_files[idx].replace('.tv','.pt'), mmap=True)
+        
         real = torch.tensor(np.real(gauge_conf), dtype=torch.float32)
         imag = torch.tensor(np.imag(gauge_conf), dtype=torch.float32)
         gauge_conf = torch.tensor(np.array([real,imag])).reshape(4, var.NT, var.NX)  
