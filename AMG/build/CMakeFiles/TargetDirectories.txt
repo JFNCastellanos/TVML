@@ -1,3 +1,0 @@
-/wsgjsc/home/nietocastellanos1/Documents/TVML/AMG/build/CMakeFiles/AMG_32x32_l2.dir
-/wsgjsc/home/nietocastellanos1/Documents/TVML/AMG/build/CMakeFiles/edit_cache.dir
-/wsgjsc/home/nietocastellanos1/Documents/TVML/AMG/build/CMakeFiles/rebuild_cache.dir

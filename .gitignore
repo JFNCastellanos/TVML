@@ -6,3 +6,5 @@ __pycache__/
 sap/
 confs/
 fake_tv/
+AMG/build/
+AMG/.vscode

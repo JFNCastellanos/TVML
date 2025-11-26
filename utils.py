@@ -35,3 +35,45 @@ def output_size(in_size,kernel,stride,padding,transpose=False):
         return (in_size-1)*stride - 2*padding + kernel
     else:
         return (in_size + 2*padding - kernel)/stride + 1
+
+
+import torch
+import struct
+
+def SavePredictions(dataloader, model, device):
+    """
+    Saves test vectors predicted with the model into binary files.
+    One file per test vector. The data layout is the same as for
+    the near-kernel vectors used for the training.
+    x, t, μ, Re(Uμ), Im(Uμ)
+    """
+    with torch.no_grad():
+        for batch_id, batch in enumerate(dataloader):
+            confs_batch = batch[0].to(device)          # (B, …)
+            pred = model(confs_batch)                  # (B, 4*NV, NT, NX)
+            confsID = batch[2]
+
+            B = pred.shape[0]
+            pred = pred.view(B, var.NV, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
+
+            # Build complex tensor (B,NV,2,NT,NX)
+            real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
+            imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)   # (B,NV,2,NT,NX)
+            pred_complex = torch.complex(real, imag)
+            norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV, 1, 1, 1)
+            norms_broadcastable = norms.view(B, var.NV, 1, 1, 1)
+            pred_complex_normalized = pred_complex / norms_broadcastable
+            pred_complex_normalized = pred_complex_normalized.cpu().detach().numpy()
+            for i in range(len(confs_batch)):
+                for tv in range(var.NV):
+                    file_path = "fake_tv/b{0}_{1}x{2}/{3}/conf{4}_fake_tv{5}.tv".format(var.BETA,var.NX,var.NT,var.M0_FOLDER,confsID[i],tv)
+                    fmt = "<3i2d"
+                    with open(file_path, "wb") as f:
+                        for x in range(var.NX):
+                            for t in range(var.NT):
+                                for mu in range(2):
+                                    value = pred_complex_normalized[i,tv,mu,t,x]
+                                    Re = np.real(value)
+                                    Im = np.imag(value)
+                                    data = struct.pack(fmt, int(x), int(t), int(mu), float(Re), float(Im))
+                                    f.write(data)

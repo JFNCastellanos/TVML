@@ -7,6 +7,7 @@ def init():
     Lattice parameters, gauge coupling, bare mass, number of configurations to load, lattice blocking, number of test vectors, etc.
     """
     global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP
+    global TRAIN_LEN, TEST_LEN 
     BETA, NX, NT= 2, 32, 32
     M0 = -0.18840579710144945 
     M0_STRING = utils.formatt(M0) #format string
@@ -20,6 +21,8 @@ def init():
     NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
     TRAIN_PROP = 0.9 #Proportion of total examples used for training
+    TRAIN_LEN = int(NO_CONFS*0.9)
+    TEST_LEN = NO_CONFS - TRAIN_LEN 
     
 def print_parameters():
     print("*********** Configuration parameters ***********")
