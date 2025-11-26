@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     //mlearning::confID = 256;
     
 
-    for (int id = 0; id < 5; id++){
+    for (int id = 0; id < 20; id++){
         mlearning::confID = confsID[id];
         
     
@@ -106,8 +106,8 @@ int main(int argc, char **argv) {
     
     Tests test(GConf, rhs, x0 ,m0);
     if (rank == 0){
-        test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
-        test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
+      //  test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
+      //  test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
     }
 
     MPI_Barrier(MPI_COMM_WORLD);

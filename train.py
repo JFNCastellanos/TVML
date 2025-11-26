@@ -23,7 +23,7 @@ def train(dataloader, model, optimizer,losses,version):
         1 -> Assemble P, P^+ with the predicted test vectors and verify that SAP vectors are in the image.
     """
     model.train()
-    criterion = lf.CustomLossTorch().to(var.DEVICE)               # instantiate once, reuse
+    criterion = lf.CustomLossTorch().to(var.DEVICE)           
     for batch_id, batch in enumerate(dataloader):
         # -------------------------------------------------
         # Load the data
@@ -120,15 +120,9 @@ def evaluate(dataloader, model, device, version,criterion=None):
     was_training = model.training          # remember the original state
     model.eval()
 
-    # ------------------------------------------------------------------
-    # Build (or reuse) the loss object on the proper device
-    # ------------------------------------------------------------------
+
     if criterion is None:
         criterion = lf.CustomLossTorch().to(device)
-
-    # ------------------------------------------------------------------
-    # Containers for the per‑batch losses
-    # ------------------------------------------------------------------
     batch_losses = []
 
     # ------------------------------------------------------------------
@@ -168,10 +162,7 @@ def evaluate(dataloader, model, device, version,criterion=None):
             else:
                 print("Choose a valid version")
                 return None
-            
-            # -------------------------------------------------
-            # Store loss value (as a Python float)
-            # -------------------------------------------------
+
             loss_val = loss.item()
             batch_losses.append(loss_val)
 

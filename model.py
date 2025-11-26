@@ -82,30 +82,37 @@ neural_net3 = nn.Sequential(
             nn.Flatten(), #We flatten the output after the convolution
     
             nn.Linear(128 * var.NT//4 * var.NX//4, 256), #We multiply by the number of output channels
+            nn.Dropout(p=0.1),
             nn.BatchNorm1d(256),
             nn.PReLU(256),
 
             nn.Linear(256, 512),
+            nn.Dropout(p=0.1),
             nn.BatchNorm1d(512),
             nn.PReLU(512),
 
             nn.Linear(512, 512),
+            nn.Dropout(p=0.1),
             nn.BatchNorm1d(512),
             nn.PReLU(512),
 
             nn.Linear(512, 512),
+            nn.Dropout(p=0.1),
             nn.BatchNorm1d(512),
             nn.PReLU(512),
 
             nn.Linear(512, 256),
+            nn.Dropout(p=0.1),
             nn.BatchNorm1d(256),
             nn.PReLU(256),
 
-            nn.Linear(256, 128), 
+            nn.Linear(256, 128),
+            nn.Dropout(p=0.1),
             nn.BatchNorm1d(128),
             nn.PReLU(128),
 
             nn.Linear(128, 64), 
+            nn.Dropout(p=0.1),
             nn.BatchNorm1d(64),
             nn.PReLU(64),
             #nn.Hardtanh(min_val=-0.5, max_val=0.5),

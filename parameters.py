@@ -27,7 +27,7 @@ def init():
 def print_parameters():
     print("*********** Configuration parameters ***********")
     print("* β={0}, Nx={1}, Nt={2}".format(BETA,NX,NT))
-    print("* Lattice sites={0}".format(N))
+    print("* Variables={0}".format(N))
     print("* m0={0}".format(np.round(M0,4)))
     print("* blocks_x={0}, blocks_t={1} (for the aggregation)".format(BLOCKS_X,BLOCKS_T))
     print("* Nv={0}".format(NV))
