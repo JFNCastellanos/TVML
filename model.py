@@ -126,6 +126,40 @@ neural_net3 = nn.Sequential(
     #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
 )
 
+conv_layers = nn.Sequential(
+            #Conv2D(in_chan,out_chan,kernel,stride,padding)
+            #size 4 x NT x NX
+            nn.CircularPad2d(1), #We pad to include periodic boundaries
+            #size 4 x (NT+1) x (NX+1)    
+            nn.Conv2d(4, 64, 2, 1, 0),
+            nn.BatchNorm2d(64),
+            nn.PReLU(64),
+            #size 12 x NT x NX  
+            nn.CircularPad2d(1), 
+            #size 12 x (NT+1) x (NX+1)  
+            nn.Conv2d(64, 128, 2, 1, 0),
+            nn.BatchNorm2d(128),
+            nn.PReLU(128),
+            #size 24 x NT x NX  
+            nn.AdaptiveAvgPool2d((1, 1))
+            #size 24 x 1 x 1  
+)
+linear_layers = nn.Sequential(
+            #state size 24
+            nn.Linear(128, 256), #We multiply by the number of output channels
+            #nn.Dropout(p=0.1),
+            nn.BatchNorm1d(256),
+            nn.PReLU(256),
+    
+            nn.Linear(256, 512), #We multiply by the number of output channels
+            #nn.Dropout(p=0.1),
+            nn.BatchNorm1d(512),
+            nn.PReLU(512),
+            nn.Linear(512, 4*var.NV*var.NT*var.NX),
+    #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
+)
+
+
 
 class TvGenerator(nn.Module):
     """
@@ -134,8 +168,11 @@ class TvGenerator(nn.Module):
     def __init__(self, ngpu,batch_size):
         super(TvGenerator, self).__init__()
         self.ngpu = ngpu
-        self.main = neural_net3 #neural_net
+        self.conv_layers = conv_layers
+        self.linear_layers = linear_layers
         self.batch_size = batch_size
     def forward(self, input):
-        x = self.main(input)
+        x = self.conv_layers(input)
+        x = x.squeeze() #We remove the trivial dimensions
+        x = self.linear_layers(x)
         return x.view(self.batch_size,var.NV,4,var.NT,var.NX)

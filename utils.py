@@ -36,6 +36,18 @@ def output_size(in_size,kernel,stride,padding,transpose=False):
     else:
         return (in_size + 2*padding - kernel)/stride + 1
 
+def conv_params(in_channel,out_channel,kernelx,kernely):
+    """
+    Number of parameters involved in a convolutional layer
+    """
+    return (in_channel*kernelx*kernely + 1) * out_channel
+
+def ll_parameters(in_channel,out_channel):
+    """
+    Number of parameters involved in a linear layer
+    """
+    return (in_channel + 1) * out_channel
+
 
 import torch
 import struct
