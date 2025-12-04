@@ -141,6 +141,13 @@ conv_layers = nn.Sequential(
             nn.BatchNorm2d(128),
             nn.PReLU(128),
             #size 24 x NT x NX  
+
+            #nn.CircularPad2d(1), 
+            #size 12 x (NT+1) x (NX+1)  
+            #nn.Conv2d(128, 4*var.NV_PRED, 2, 1, 0),
+            #nn.BatchNorm2d(4*var.NV_PRED),
+            #nn.PReLU(4*var.NV_PRED),
+    
             nn.AdaptiveAvgPool2d((1, 1))
             #size 24 x 1 x 1  
 )
@@ -155,8 +162,8 @@ linear_layers = nn.Sequential(
             #nn.Dropout(p=0.1),
             nn.BatchNorm1d(512),
             nn.PReLU(512),
-            nn.Linear(512, 4*var.NV*var.NT*var.NX),
-    #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
+            nn.Linear(512, 4*var.NV_PRED*var.NT*var.NX),
+    #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
 
@@ -175,4 +182,4 @@ class TvGenerator(nn.Module):
         x = self.conv_layers(input)
         x = x.squeeze() #We remove the trivial dimensions
         x = self.linear_layers(x)
-        return x.view(self.batch_size,var.NV,4,var.NT,var.NX)
+        return x.view(self.batch_size,var.NV_PRED,4,var.NT,var.NX)

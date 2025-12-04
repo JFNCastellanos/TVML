@@ -41,7 +41,7 @@ def train(dataloader, model, optimizer,losses,version):
         # -------------------------------------------------
         # Example: real/imag in 4 channels (Re0, Re1, Im0, Im1)
         B = pred.shape[0]                         #Batch size
-        pred = pred.view(B, var.NV, 4, var.NT, var.NX)      # (B,NV,4,NT,NX)
+        pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)      # (B,NV,4,NT,NX)
 
         # Build a complex tensor of shape (B, NV, 2, NT, NX)
         #   channel 0 → real part of component 0
@@ -54,7 +54,7 @@ def train(dataloader, model, optimizer,losses,version):
 
         if version == 0:
             #Normalizing the fake test vectors
-            norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV, 1, 1, 1)
+            norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV_PRED, 1, 1, 1)
             pred_complex_normalized = pred_complex / norms
             #We assemble P, P^+ with the SAP test vectors and find other vectors that are similar to them.
             loss = criterion(near_kernel, pred_complex_normalized)   # loss is a scalar Tensor
@@ -142,7 +142,7 @@ def evaluate(dataloader, model, device, version,criterion=None):
             pred = model(confs_batch)                  # (B, 4*NV, NT, NX)
 
             B = pred.shape[0]    #Batch size
-            pred = pred.view(B, var.NV, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
+            pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
 
             # Build complex tensor (B,NV,2,NT,NX)
             real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
@@ -150,7 +150,7 @@ def evaluate(dataloader, model, device, version,criterion=None):
             pred_complex = torch.complex(real, imag)
             if version == 0:
                 #Normalizing the fake test vectors
-                norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV, 1, 1, 1)
+                norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV_PRED, 1, 1, 1)
                 pred_complex_normalized = pred_complex / norms
                 #We assemble P, P^+ with the SAP test vectors and find other vectors that are similar to them.
                 loss = criterion(near_kernel, pred_complex_normalized)   # loss is a scalar Tensor

@@ -36,7 +36,7 @@ class CustomLossTorch(nn.Module):
     The class is defined as subclass of nn.Module
     """
     def __init__(self):
-        super().__init__()                     
+        super().__init__() 
 
     def forward(self, pred, target):
         """
@@ -45,17 +45,18 @@ class CustomLossTorch(nn.Module):
         Returns a scalar loss Tensor (requires_grad=True)
         """
         batch_size = pred.shape[0]
+        nv = target.shape[1]
         loss = 0.0
         for i in range(batch_size):
             # the Operators class must accept a **torch** tensor, not a numpy array
             ops = op.Operators(var.BLOCKS_X, var.BLOCKS_T, pred[i])   # <-- pred[i] is a torch Tensor
 
             # loop over the NV dimension (vectorise this later)
-            for tv in range(var.NV):
+            for tv in range(nv):
                 #  P_Pdagg returns a tensor with the same shape as its input
                 corrected = ops.P_Pdagg(target[i, tv])                # shape (2, NT, NX)
                 diff = target[i, tv] - corrected
                 loss = loss + torch.linalg.norm(diff)
                 #loss = loss + torch.linalg.norm(diff)
         # loss is a scalar tensor (still attached to the graph)
-        return loss/(batch_size*var.NV)
+        return loss/(batch_size*nv)
