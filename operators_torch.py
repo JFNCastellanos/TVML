@@ -17,7 +17,7 @@ class Operators():
     To check that orthonormalziation was done right call check_orth()
     The implementations rely on torch 
     """
-    def __init__(self, blocks_x,blocks_t,test_vectors):
+    def __init__(self, blocks_x,blocks_t,test_vectors,orth=True):
         """
         blocks_x, blocks_t: lattice blocking
         test_vectors.shape [Nv,2,Nx,Nt]
@@ -29,7 +29,10 @@ class Operators():
         self.nb = self.blocks_x*self.blocks_t
         self.x_elements = self.nx // self.blocks_x
         self.t_elements = self.nt // self.blocks_t
-        self.tv_orth() #Orthonormalizes the set of test vectors
+        if orth == True:
+            self.tv_orth() #Orthonormalizes the set of test vectors
+        else:
+            print("Test vectors not orthonormalized")
         #after orthonormalization, every test vector's norm is (globally) sqrt(2*number_of_lattice_blocks)
         self.device = var.DEVICE
 
@@ -40,18 +43,29 @@ class Operators():
     In case the test vectors are not provided we generate them randomly
     """
     @classmethod
-    def rand_tv(cls,blocks_x,blocks_t):
-        test_vectors = torch.zeros(var.NV,2,var.NT,var.NX,dtype=complex,device = self.device)
+    def rand_tv(cls,nv,nx,nt,blocks_x,blocks_t,orth=True):
+        test_vectors = torch.zeros(nv,2,nt,nx,dtype=complex)
         #random.seed(0)
-        for tv in range(var.NV):
-            for nt in range(var.NT):
-                for nx in range(var.NX):
+        for tv in range(nv):
+            for t in range(nt):
+                for x in range(nx):
                     for s in range(2):
                         x = random.random()
                         y = random.random()
                         z = complex(x, y)
-                        test_vectors[tv,s,nt,nx] = z   #2*(nx*NT + nt) + s + 1 + tv*2*NX*NT
-        return cls(blocks_x,blocks_t, test_vectors)
+                        test_vectors[tv,s,t,x] = z   #2*(nx*NT + nt) + s + 1 + tv*2*NX*NT
+        return cls(blocks_x,blocks_t, test_vectors,orth)
+
+    @classmethod
+    def test_tv(cls,nv,nx,nt,blocks_x,blocks_t,orth=True):
+        test_vectors = torch.zeros(nv,2,nt,nx,dtype=complex)
+        for tv in range(nv):
+            for t in range(nt):
+                for x in range(nx):
+                    for s in range(2):
+                        test_vectors[tv,s,t,x] = 2*(x*nt + t) + s + 1 + tv*2*nx*nt
+        return cls(blocks_x,blocks_t, test_vectors,orth)
+    
 
     def P_vc(self,vc):
         """

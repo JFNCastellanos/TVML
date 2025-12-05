@@ -130,24 +130,20 @@ conv_layers = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
             #size 4 x NT x NX
             nn.CircularPad2d(1), #We pad to include periodic boundaries
-            #size 4 x (NT+1) x (NX+1)    
+            #size 4 x (NT+2) x (NX+2)    
             nn.Conv2d(4, 64, 2, 1, 0),
             nn.BatchNorm2d(64),
             nn.PReLU(64),
-            #size 12 x NT x NX  
-            nn.CircularPad2d(1), 
             #size 12 x (NT+1) x (NX+1)  
+            nn.CircularPad2d(1), 
+            #size 12 x (NT+3) x (NX+3)  
             nn.Conv2d(64, 128, 2, 1, 0),
             nn.BatchNorm2d(128),
             nn.PReLU(128),
-            #size 24 x NT x NX  
-
+            #size 24 x (NT+2) x (NX+2)  
             #nn.CircularPad2d(1), 
-            #size 12 x (NT+1) x (NX+1)  
-            #nn.Conv2d(128, 4*var.NV_PRED, 2, 1, 0),
-            #nn.BatchNorm2d(4*var.NV_PRED),
-            #nn.PReLU(4*var.NV_PRED),
-    
+            #size 12 x (NT+4) x (NX+4)  
+            #nn.Conv2d(128, 4*var.NV_PRED, 5, 1, 0),    
             nn.AdaptiveAvgPool2d((1, 1))
             #size 24 x 1 x 1  
 )
