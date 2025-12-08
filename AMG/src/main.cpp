@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
     AMGV::cycle = 0; //K-cycle = 1, V-cycle = 0
     AMGV::Nit = 0;
-    AMGV::SAP_test_vectors_iterations = 4;
+    AMGV::SAP_test_vectors_iterations = 0;
     //-0.1023;//-0.0933;//-0.18840579710144945; //0.0709
     double m0 = -0.18840579710144945; 
     double beta = 2;
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     //mlearning::confID = 256;
     
 
-    for (int id = 0; id < 20; id++){
+    for (int id = 0; id < 50; id++){
         mlearning::confID = confsID[id];
         
     
