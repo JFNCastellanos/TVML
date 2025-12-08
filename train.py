@@ -25,20 +25,14 @@ def train(dataloader, model, optimizer,losses,version):
     model.train()
     criterion = lf.CustomLossTorch().to(var.DEVICE)           
     for batch_id, batch in enumerate(dataloader):
-        # -------------------------------------------------
         # Load the data
-        # -------------------------------------------------
         confs_batch   = batch[0].to(var.DEVICE)            # shape (B, …)
         near_kernel   = batch[1].to(var.DEVICE)            # shape (B, NV, 2, NT, NX)
 
-        # -------------------------------------------------
         # Forward pass of the model → predicted test vectors
-        # -------------------------------------------------
         # model returns a real‑valued tensor of shape [B, 4*NV, NT, NX]
-        pred = model(confs_batch)                     # still a torch Tensor
-        # -------------------------------------------------
-        # Reshape / convert to complex dtype
-        # -------------------------------------------------
+        pred = model(confs_batch)                   
+        # Reshape / convert to complex dtype (needed for operators)
         # Example: real/imag in 4 channels (Re0, Re1, Im0, Im1)
         B = pred.shape[0]                         #Batch size
         pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)      # (B,NV,4,NT,NX)
@@ -50,7 +44,8 @@ def train(dataloader, model, optimizer,losses,version):
         #   channel 3 → imag part of component 1
         real = torch.stack([pred[:,:, 0], pred[:,:, 1]], dim=2)   # (B,NV,2,NT,NX)
         imag = torch.stack([pred[:,:, 2], pred[:,:, 3]], dim=2)   # (B,NV,2,NT,NX)
-        pred_complex = torch.complex(real, imag)                  # (B,NV,2,NT,NX)
+        pred_complex = torch.complex(real, imag)    # (B,NV,2,NT,NX)
+        #If real.dtype = float64 and imag.type = float64, then .complex is complex128
 
         if version == 0:
             #Normalizing the fake test vectors
@@ -66,17 +61,12 @@ def train(dataloader, model, optimizer,losses,version):
         else:
             print("Choose a valid version")
             return None
-       
-        # -------------------------------------------------
+        
         # Back‑propagation
-        # -------------------------------------------------
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        # -------------------------------------------------
-        # Logging
-        # -------------------------------------------------
         loss_val = loss.item()
         current = (batch_id + 1) * B
         losses.append(loss_val)

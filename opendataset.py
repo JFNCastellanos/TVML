@@ -19,17 +19,7 @@ def read_binary_conf(self,path):
                 ('re','f8'),
                 ('im','f8')])
     conf = np.zeros((2, var.NT, var.NX), dtype=np.complex128)
-    conf[data['mu'], data['t'], data['x']] = data['re'] + 1j * data['im']
-
-    #with open(path, 'rb') as infile:
-    #    for i in range(var.N):
-            #Real int values
-    #        x, t, mu = struct.unpack('3i', infile.read(12))
-            #Read double values
-    #        re, im = struct.unpack('2d', infile.read(16))
-    #        conf[mu,t,x] = complex(re,im)
-
-            
+    conf[data['mu'], data['t'], data['x']] = data['re'] + 1j * data['im']            
     return conf
 
 
@@ -40,8 +30,8 @@ class ConfsDataset(torch.utils.data.Dataset):
     Each conf has the format U[μ,t,x] (4 x NX x NT) (we split real and imaginary part)
     gauge_conf = [Re(U0),Re(U1),Im(U0),Im(U1)]
     
-    For the near kernel vectors we don't do the splitting, since they won't be evaluated with
-    pytorch. 
+    For the near kernel vectors we don't do the splitting, since we will evaluate them
+    with complex tensors.
     tvectors.shape = [NV,2,NT,NX], with a complex number format.
     
     The class is defined as a subclass of Dataset from pytorch
@@ -58,11 +48,9 @@ class ConfsDataset(torch.utils.data.Dataset):
             self.conf_files.append(PATH)
             self.tv_files.append([])
             for tvID in range(var.NV):
-                PATH='sap/near_kernel/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,tvID)
+                PATH='/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,tvID)
                 #PATH =           'confs/near_kernel/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,tvID)           
                 self.tv_files[confID].append(PATH) 
-    #Method for opening the binary confs
-    read_binary_conf = read_binary_conf
         
     def __getitem__(self, idx):
         #idx is the conf index i.e. the conf file ends with ..._idx.ctxt
@@ -73,7 +61,7 @@ class ConfsDataset(torch.utils.data.Dataset):
 
         #Loading gauge conf
         gauge_conf = torch.load(conf_file.replace('.ctxt','.pt'), mmap=True,weights_only=True)
-        gauge_conf = torch.cat([torch.real(gauge_conf), torch.imag(gauge_conf)], dim=0).float()   # [4, NT, NX]
+        gauge_conf = torch.cat([torch.real(gauge_conf), torch.imag(gauge_conf)], dim=0).to(dtype=torch.float64)   # [4, NT, NX]
 
         
         for tvID in range(var.NV):
