@@ -22,6 +22,21 @@ def read_binary_conf(self,path):
     conf[data['mu'], data['t'], data['x']] = data['re'] + 1j * data['im']            
     return conf
 
+def read_binary_plaquette(self,path):
+    """
+    Function used for opening a plaquette in binary format.
+    """
+    var.init()
+    x, t, vals = np.zeros(var.N), np.zeros(var.N), np.zeros(var.N,dtype=complex)
+    #U[μ,t,x]
+    #conf = np.zeros((2,var.NT,var.NX),dtype=complex)
+    data = np.fromfile(path, dtype=[('x', 'i4'),
+                ('t', 'i4'),
+                ('re','f8'),
+                ('im','f8')])
+    conf = np.zeros((2, var.NT, var.NX), dtype=np.complex128)
+    conf[data['mu'], data['t'], data['x']] = data['re'] + 1j * data['im']            
+    return conf
 
 class ConfsDataset(torch.utils.data.Dataset):
     """
