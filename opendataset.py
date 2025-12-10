@@ -34,9 +34,9 @@ def read_binary_plaquette(self,path):
                 ('t', 'i4'),
                 ('re','f8'),
                 ('im','f8')])
-    conf = np.zeros((2, var.NT, var.NX), dtype=np.complex128)
-    conf[data['mu'], data['t'], data['x']] = data['re'] + 1j * data['im']            
-    return conf
+    plaquette = np.zeros((var.NT, var.NX), dtype=np.complex128)
+    plaquette[data['t'], data['x']] = data['re'] + 1j * data['im']            
+    return plaquette
 
 class ConfsDataset(torch.utils.data.Dataset):
     """
