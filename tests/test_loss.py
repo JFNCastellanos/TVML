@@ -44,12 +44,12 @@ class TestLoss():
     def testTrivialCase(self):
         vectors = self.first_batch[1].to(var.DEVICE)
         loss = self.criterion(self.vectors,self.vectors) 
-        assert torch.abs(loss) < 1e-8, "When the interpolator is assembled with tv and is evaluated on tv, the loss should be zero, instead it is {0}".format(loss)
+        assert torch.abs(loss) < 1e-5, "When the interpolator is assembled with tv and is evaluated on tv, the loss should be zero, instead it is {0}".format(loss)
         print("Trivial case succesful")
     
     def testRandomCase(self):
         vectors = self.first_batch[1].to(var.DEVICE)
-        rand_tv = torch.rand(self.batch_size,var.NV,2,var.NT,var.NX,dtype=torch.complex128,device=var.DEVICE)
+        rand_tv = torch.rand(self.batch_size,var.NV,2,var.NT,var.NX,dtype=var.PREC_COMPLEX,device=var.DEVICE)
         loss = self.criterion(self.vectors,rand_tv)
         print("Loss when interpolator is assembled with SAP vectors and evaluated on random vectors:",loss)
         loss = self.criterion(rand_tv,self.vectors)
@@ -72,7 +72,7 @@ class TestLoss():
             for i in range(remTV):
                 path = '/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(
                 int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,29-i)
-                tvector = torch.tensor(read_binary_conf(None,path)).to(var.DEVICE)
+                tvector = torch.tensor(read_binary_conf(None,path)).to(device=var.DEVICE,dtype=var.PREC_COMPLEX)
                 #print("Test vector ",29-i)
                 loss_ind = self.torch_loss_ind(self.vectors[confID],tvector)
                 loss += loss_ind

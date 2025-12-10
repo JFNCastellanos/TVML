@@ -6,7 +6,7 @@ def init():
     """
     Lattice parameters, gauge coupling, bare mass, number of configurations to load, lattice blocking, number of test vectors, etc.
     """
-    global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP
+    global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP, PRECISION, PREC, PREC_COMPLEX
     global TRAIN_LEN, TEST_LEN, NV_PRED
     BETA, NX, NT= 2, 32, 32
     M0 = -0.18840579710144945 
@@ -16,14 +16,23 @@ def init():
     BLOCKS_X, BLOCKS_T = 2, 2
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
-    NV = 20   #SAP test vectors used in the loss function 
-    NV_PRED = 5 #Number of test vectors to predict (NV_PRED < NV unless I have many training examples)
+    NV = 30   #SAP test vectors used in the loss function 
+    NV_PRED = 10 #Number of test vectors to predict (NV_PRED < NV unless I have many training examples)
     N = 2*NX*NT
     NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
     TRAIN_PROP = 0.9 #Proportion of total examples used for training
     TRAIN_LEN = int(NO_CONFS*0.9)
     TEST_LEN = NO_CONFS - TRAIN_LEN 
+    PRECISION = "double"
+    if PRECISION == "single":
+        PREC = torch.float32
+        PREC_COMPLEX = torch.complex64
+    elif PRECISION == "double":
+        PREC = torch.float64
+        PREC_COMPLEX = torch.complex128
+    else:
+        print("Give a valid floating point precision")
     
 def print_parameters():
     print("*********** Configuration parameters ***********")
@@ -34,5 +43,7 @@ def print_parameters():
     print("* SAP vectors for the loss function Nv={0}".format(NV))
     print("* Fake test vectors generated Nv={0}".format(NV_PRED))
     print("* Number of confs={0}".format(NO_CONFS))
-    print("* Confs used for training={0}".format(int(TRAIN_PROP*NO_CONFS)))  
+    print("* Confs used for training={0}".format(int(TRAIN_PROP*NO_CONFS))) 
+    print("* Device: {0}".format(DEVICE))
+    print("* Precision: {0}".format(PRECISION))
     print("************************************************")

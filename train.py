@@ -14,7 +14,8 @@ def train(dataloader, model, optimizer,losses,version):
     ----------
     dataloader : torch.utils.data.DataLoader
         DataLoader that yields the training loader:
-        (confs_batch, near_kernel)
+        (data_batch, near_kernel)
+        Each data batch has the shape [Re(U0),Re(U1),Im(U0),Im(U1),Re(U01),Im(U01)]
     model : torch.nn.Module
         The model to evaluate.
     Appends loss to losses (list declared outside the function)
@@ -26,25 +27,21 @@ def train(dataloader, model, optimizer,losses,version):
     criterion = lf.CustomLossTorch().to(var.DEVICE)           
     for batch_id, batch in enumerate(dataloader):
         # Load the data
-        confs_batch   = batch[0].to(var.DEVICE)            # shape (B, …)
+        data_batch   = batch[0].to(var.DEVICE)             # shape (B, 6, NT, NX)  
         near_kernel   = batch[1].to(var.DEVICE)            # shape (B, NV, 2, NT, NX)
 
-        # Forward pass of the model → predicted test vectors
+        # Predicted test vectors
         # model returns a real‑valued tensor of shape [B, 4*NV, NT, NX]
-        pred = model(confs_batch)                   
+        pred = model(data_batch)                   
         # Reshape / convert to complex dtype (needed for operators)
         # Example: real/imag in 4 channels (Re0, Re1, Im0, Im1)
-        B = pred.shape[0]                         #Batch size
+        B = pred.shape[0]                                        #Batch size
         pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)      # (B,NV,4,NT,NX)
 
         # Build a complex tensor of shape (B, NV, 2, NT, NX)
-        #   channel 0 → real part of component 0
-        #   channel 1 → real part of component 1
-        #   channel 2 → imag part of component 0
-        #   channel 3 → imag part of component 1
-        real = torch.stack([pred[:,:, 0], pred[:,:, 1]], dim=2)   # (B,NV,2,NT,NX)
-        imag = torch.stack([pred[:,:, 2], pred[:,:, 3]], dim=2)   # (B,NV,2,NT,NX)
-        pred_complex = torch.complex(real, imag)    # (B,NV,2,NT,NX)
+        real = torch.stack([pred[:,:, 0], pred[:,:, 1]], dim=2)   # (B,NV,2,NT,NX) (real number)
+        imag = torch.stack([pred[:,:, 2], pred[:,:, 3]], dim=2)   # (B,NV,2,NT,NX) (real number)
+        pred_complex = torch.complex(real, imag)                  # (B,NV,2,NT,NX) (complex number)
         #If real.dtype = float64 and imag.type = float64, then .complex is complex128
 
         if version == 0:
@@ -83,7 +80,7 @@ def evaluate(dataloader, model, device, version,criterion=None):
     ----------
     dataloader : torch.utils.data.DataLoader
         DataLoader that yields the same tuple format as the training loader:
-        (confs_batch, near_kernel)
+        (data_batch, near_kernel)
     model : torch.nn.Module
         The model to evaluate. It will be switched to ``eval`` mode for the
         duration of the call and restored to its previous mode afterwards.
@@ -123,13 +120,13 @@ def evaluate(dataloader, model, device, version,criterion=None):
             # -------------------------------------------------
             # Load the data (move to the same device as the model)
             # -------------------------------------------------
-            confs_batch = batch[0].to(device)          # (B, …)
+            data_batch = batch[0].to(device)          # (B, …)
             near_kernel = batch[1].to(device)          # (B, NV, 2, NT, NX)
 
             # -------------------------------------------------
             # Forward pass – exactly the same reshaping as in training
             # -------------------------------------------------
-            pred = model(confs_batch)                  # (B, 4*NV, NT, NX)
+            pred = model(data_batch)                  # (B, 4*NV, NT, NX)
 
             B = pred.shape[0]    #Batch size
             pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)

@@ -12,32 +12,32 @@ import parameters as var
 neural_net = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
             #state size 4 x NT x NX
-            nn.Conv2d(4, 128, 2, 2, 0,dtype=torch.double),
+            nn.Conv2d(4, 128, 2, 2, 0,dtype=var.PREC),
             #nn.Dropout(p=0.1),
             nn.BatchNorm2d(128),
             nn.PReLU(128),
             #state size 128 x NT/2 x NX/2
-            nn.Conv2d(128, 64, 2, 2, 0,dtype=torch.double),
+            nn.Conv2d(128, 64, 2, 2, 0,dtype=var.PREC),
             #nn.Dropout(p=0.1),
             nn.BatchNorm2d(64),
             nn.PReLU(64),
             #state size 64 x NT/4 x NX/4
-            nn.Conv2d(64, 32, 2, 2, 0,dtype=torch.double),
+            nn.Conv2d(64, 32, 2, 2, 0,dtype=var.PREC),
             #nn.Dropout(p=0.1),
             nn.BatchNorm2d(32),
             nn.PReLU(32),
             #state size 32 x NT/8 x NX/8
-            nn.ConvTranspose2d(32, 64, 2, 2, 0,dtype=torch.double),
+            nn.ConvTranspose2d(32, 64, 2, 2, 0,dtype=var.PREC),
             #nn.Dropout(p=0.1),
             nn.BatchNorm2d(64),
             nn.PReLU(64),
             # state size 64 x NT/4 x NX/4
-            nn.ConvTranspose2d(64, 64, 2, 2, 0,dtype=torch.double),
+            nn.ConvTranspose2d(64, 64, 2, 2, 0,dtype=var.PREC),
             #nn.Dropout(p=0.1),
             nn.BatchNorm2d(64),
             nn.PReLU(64),
             # state size 64 x NT/2 x NX/2
-            nn.ConvTranspose2d(64, 4*var.NV, 2, 2, 0,dtype=torch.double),
+            nn.ConvTranspose2d(64, 4*var.NV, 2, 2, 0,dtype=var.PREC),
             nn.Hardtanh(min_val=-2.0, max_val=2.0)
             # state size. 4*Nv x NT x NX, (real, imaginary part and two spin components)
 )
@@ -129,18 +129,18 @@ neural_net3 = nn.Sequential(
 
 conv_layers = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
-            #size 4 x NT x NX
+            #size 6 x NT x NX
             nn.CircularPad2d(1), #We pad to include periodic boundaries
-            #size 4 x (NT+2) x (NX+2)    
-            nn.Conv2d(4, 64, 2, 1, 0,dtype=torch.double),
-            nn.BatchNorm2d(64,dtype=torch.double),
-            nn.PReLU(64,dtype=torch.double),
+            #size 6 x (NT+2) x (NX+2)    
+            nn.Conv2d(6, 64, 2, 1, 0,dtype=var.PREC),
+            nn.BatchNorm2d(64,dtype=var.PREC),
+            nn.PReLU(64,dtype=var.PREC),
             #size 12 x (NT+1) x (NX+1)  
             nn.CircularPad2d(1), 
             #size 12 x (NT+3) x (NX+3)  
-            nn.Conv2d(64, 128, 2, 1, 0,dtype=torch.double),
-            nn.BatchNorm2d(128,dtype=torch.double),
-            nn.PReLU(128,dtype=torch.double),
+            nn.Conv2d(64, 128, 2, 1, 0,dtype=var.PREC),
+            nn.BatchNorm2d(128,dtype=var.PREC),
+            nn.PReLU(128,dtype=var.PREC),
             #size 24 x (NT+2) x (NX+2)  
             #nn.CircularPad2d(1), 
             #size 12 x (NT+4) x (NX+4)  
@@ -150,16 +150,16 @@ conv_layers = nn.Sequential(
 )
 linear_layers = nn.Sequential(
             #state size 24
-            nn.Linear(128, 256,dtype=torch.double), #We multiply by the number of output channels
+            nn.Linear(128, 256,dtype=var.PREC), #We multiply by the number of output channels
             #nn.Dropout(p=0.1),
-            nn.BatchNorm1d(256,dtype=torch.double),
-            nn.PReLU(256,dtype=torch.double),
+            nn.BatchNorm1d(256,dtype=var.PREC),
+            nn.PReLU(256,dtype=var.PREC),
     
-            nn.Linear(256, 512,dtype=torch.double), #We multiply by the number of output channels
+            nn.Linear(256, 512,dtype=var.PREC), #We multiply by the number of output channels
             #nn.Dropout(p=0.1),
-            nn.BatchNorm1d(512,dtype=torch.double),
-            nn.PReLU(512,dtype=torch.double),
-            nn.Linear(512, 4*var.NV_PRED*var.NT*var.NX,dtype=torch.double),
+            nn.BatchNorm1d(512,dtype=var.PREC),
+            nn.PReLU(512,dtype=var.PREC),
+            nn.Linear(512, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 

@@ -32,7 +32,7 @@ class TestDataloader():
         assert len(self.first_batch) == 3, "The batch should have three objects (gconfs, tvectors,confID)"
         batch_size, no_real, nt, nx = self.first_batch[0].shape
         assert batch_size == self.batch_size, "Issue with the batch size for gconfs"
-        assert no_real == 4, "gconfs[1] should be of dim 4"
+        assert no_real == 6, "gconfs[1] should be of dim 6"
         assert nt == var.NT, "gconfs[2] should match Nt"
         assert nx == var.NX, "gconfs[2] should match Nx"
         batch_size, nv, spins, nt, nx = self.first_batch[1].shape
@@ -71,7 +71,7 @@ class TestDataloader():
                 for mu in range(2):
                     val = conf[mu,nt,nx] + 1j*conf[mu+2,nt,nx]
                     norm = torch.abs(val)
-                    assert torch.abs(norm-1) < 1e-9, "Norm should be one, instead it is {0} for mu={1} nt={2}, nx={3}".format(norm,mu,nt,nx)
+                    assert torch.abs(norm-1) < 1e-5, "Norm should be one, instead it is {0} for mu={1} nt={2}, nx={3}".format(norm,mu,nt,nx)
         print("All elements of the gauge conf are U(1) variables")
 
         
@@ -124,5 +124,65 @@ class TestDataloader():
         for nt in range(plaquette.shape[0]):
             for nx in range(plaquette.shape[1]):
                 norm = np.abs(plaquette[nt,nx])
-                assert np.abs(norm-1) < 1e-9, "Norm should be one, instead it is {0} for nt={1}, nx={2}".format(norm,nt,nx)
+                assert np.abs(norm-1) < 1e-5, "Norm should be one, instead it is {0} for nt={1}, nx={2}".format(norm,nt,nx)
+        print("All elements of the plaquette are U(1) variables")
+
+    def testPlaquettePt(self):
+        print("Check that plaquette from conf 0 coincides with the info in the .pt file")
+        confID = 0
+        path =  '/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel' + \
+            '/b{0}_{1}x{2}/{3}/plaquettes/plaquette_{1}x{2}_b{0}0000_m{4}_nconf{5}.plaq'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
+        #Loading plaquettes
+        plaquette = torch.load(path.replace('.plaq','.pt'), mmap=True,weights_only=True)
+        plaquette = torch.stack([torch.real(plaquette),torch.imag(plaquette)],dim=0).to(dtype=var.PREC) #[2, NT, NX]
+        print("- - - U_01(t,x) - - -")
+        nx, nt = 0, 0
+        val = plaquette[0,nt,nx] + 1j*plaquette[1,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 0, 1
+        val = plaquette[0,nt,nx] + 1j*plaquette[1,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 1, 0
+        val = plaquette[0,nt,nx] + 1j*plaquette[1,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 1, 1
+        val = plaquette[0,nt,nx] + 1j*plaquette[1,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 10, 15
+        val = plaquette[0,nt,nx] + 1j*plaquette[1,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        for nt in range(plaquette.shape[0]):
+            for nx in range(plaquette.shape[1]):
+                val = plaquette[0,nt,nx] + 1j*plaquette[1,nt,nx]
+                norm = torch.abs(val)
+                assert torch.abs(norm-1) < 1e-5, "Norm should be one, instead it is {0} for nt={1}, nx={2}".format(norm,nt,nx)
+        print("All elements of the plaquette are U(1) variables")
+    
+    def testPlaquetteDataLoader(self):
+        confID = 0
+        print("Check that plaquette {0} is correctly read. Compare with the actual numbers from the plaq file.".format(confID))
+        print("Checking from the dataloader")
+        plaquette = self.first_batch[0][confID].to(var.DEVICE)
+        assert self.first_batch[2][confID] == confID, "First conf should be ID {0}".format(confID)
+        print("- - - U_01(t,x) - - -")
+        nx, nt = 0, 0
+        val = plaquette[4,nt,nx] + 1j*plaquette[5,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 0, 1
+        val = plaquette[4,nt,nx] + 1j*plaquette[5,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 1, 0
+        val = plaquette[4,nt,nx] + 1j*plaquette[5,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 1, 1
+        val = plaquette[4,nt,nx] + 1j*plaquette[5,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        nx, nt = 10, 15
+        val = plaquette[4,nt,nx] + 1j*plaquette[5,nt,nx]
+        print("U_01({0},{1})=".format(nt,nx),val.item(),val.dtype,var.DEVICE)
+        for nt in range(plaquette.shape[0]):
+            for nx in range(plaquette.shape[1]):
+                val = plaquette[4,nt,nx] + 1j*plaquette[5,nt,nx]
+                norm = torch.abs(val)
+                assert torch.abs(norm-1) < 1e-5, "Norm should be one, instead it is {0} for nt={1}, nx={2}".format(norm,nt,nx)
         print("All elements of the plaquette are U(1) variables")

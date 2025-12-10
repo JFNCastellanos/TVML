@@ -61,8 +61,8 @@ def SavePredictions(dataloader, model, device):
     """
     with torch.no_grad():
         for batch_id, batch in enumerate(dataloader):
-            confs_batch = batch[0].to(device)          # (B, …)
-            pred = model(confs_batch)                  # (B, 4*NV, NT, NX)
+            data_batch = batch[0].to(device)          # (B, …)
+            pred = model(data_batch)                  # (B, 4*NV, NT, NX)
             confsID = batch[2]
 
             B = pred.shape[0]
@@ -76,7 +76,7 @@ def SavePredictions(dataloader, model, device):
             norms_broadcastable = norms.view(B, var.NV_PRED, 1, 1, 1)
             pred_complex_normalized = pred_complex / norms_broadcastable
             pred_complex_normalized = pred_complex_normalized.cpu().detach().numpy()
-            for i in range(len(confs_batch)):
+            for i in range(B):
                 for tv in range(var.NV_PRED):
                     file_path = "fake_tv/b{0}_{1}x{2}/{3}/conf{4}_fake_tv{5}.tv".format(var.BETA,var.NX,var.NT,var.M0_FOLDER,confsID[i],tv)
                     fmt = "<3i2d"

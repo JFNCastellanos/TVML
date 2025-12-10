@@ -246,7 +246,8 @@ void printParameters(){
             std::cout << "| Cycle = " << "K-cycle" << std::endl;
         std::cout << "| Number of levels = " << AMGV::levels << std::endl;
         std::cout << "| nu1 (pre-smoothing) = " << AMGV::nu1 << " nu2 (post-smoothing) = " << AMGV::nu2 << std::endl;
-        std::cout << "| Number of iterations for improving the interpolator = " << AMGV::Nit << std::endl;
+        std::cout << "| Number of adaptivity steps for improving the interpolator = " << AMGV::Nit << std::endl;
+        std::cout << "| Number of SAP iterations for smoothing the test vectors = " << AMGV::SAP_test_vectors_iterations << std::endl;
         std::cout << "| Restart length of GMRES at the coarse level = " << LevelV::GMRES_restart_len[LevelV::maxLevel] << std::endl;
         std::cout << "| Restarts of GMRES at the coarse level = " << LevelV::GMRES_restarts[LevelV::maxLevel] << std::endl;
         std::cout << "| GMRES tolerance for the coarse level solution = " << LevelV::GMRES_tol[LevelV::maxLevel] << std::endl;

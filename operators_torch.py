@@ -44,7 +44,7 @@ class Operators():
     """
     @classmethod
     def rand_tv(cls,nv,nx,nt,blocks_x,blocks_t,orth=True):
-        test_vectors = torch.zeros(nv,2,nt,nx,dtype=torch.complex128,device = var.DEVICE)
+        test_vectors = torch.zeros(nv,2,nt,nx,dtype=var.PREC_COMPLEX,device = var.DEVICE)
         #random.seed(0)
         for tv in range(nv):
             for t in range(nt):
@@ -58,7 +58,7 @@ class Operators():
 
     @classmethod
     def test_tv(cls,nv,nx,nt,blocks_x,blocks_t,orth=True):
-        test_vectors = torch.zeros(nv,2,nt,nx,dtype=torch.complex128,device = var.DEVICE)
+        test_vectors = torch.zeros(nv,2,nt,nx,dtype=var.PREC_COMPLEX,device = var.DEVICE)
         for tv in range(nv):
             for t in range(nt):
                 for x in range(nx):
@@ -88,7 +88,7 @@ class Operators():
         block_t: block index on t-direction
         block_x: block index on x-direction
         """   
-        v = torch.zeros(2,self.nt,self.nx,dtype=torch.complex128,device = self.device)
+        v = torch.zeros(2,self.nt,self.nx,dtype=var.PREC_COMPLEX,device = self.device)
         for block in range(self.nb):
             block_x = block // self.blocks_x
             block_t = block % self.blocks_t 
@@ -131,7 +131,7 @@ class Operators():
         block_t: block index on t-direction
         block_x: block index on x-direction
         """   
-        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=torch.complex128,device = self.device)
+        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=var.PREC_COMPLEX,device = self.device)
         for block in range(self.nb):
             block_x = block // self.blocks_x
             block_t = block % self.blocks_t
@@ -154,7 +154,7 @@ class Operators():
         Returns:
             * vector on the coarse grid
         """
-        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=torch.complex128,device = self.device)
+        vc = torch.zeros(self.nv,2,self.blocks_t,self.blocks_x,dtype=var.PREC_COMPLEX,device = self.device)
         temp = self.Pdagg_v(v)
         return self.P_vc(temp)
 
@@ -167,7 +167,7 @@ class Operators():
             * vector on the fine grid
         NOTE: Given the definition of the interpolator, this has to return vc, i.e. it acts as the identity. 
         """
-        v = torch.zeros(2,self.nt,self.nx,dtype=torch.complex128,device = self.device)
+        v = torch.zeros(2,self.nt,self.nx,dtype=var.PREC_COMPLEX,device = self.device)
         temp = self.P_vc(vc)
         return self.Pdagg_v(temp)
 
@@ -237,11 +237,11 @@ class Operators():
                         #np.vdot(a,b) = a^+ . b
                         dot_prod = torch.vdot(self.test_vectors[tv,s,tini:tfin, xini:xfin].flatten(), 
                                               self.test_vectors[tvv,s,tini:tfin, xini:xfin].flatten())
-                        if torch.abs(dot_prod) > 1e-8 and tv != tvv:
+                        if torch.abs(dot_prod) > 1e-5 and tv != tvv:
                             print("Block",block,"spin",s)
                             print("Test vectors {0} and {1} are not orthogonal".format(tv,tvv),dot_prod)
                             return 
-                        elif torch.abs(dot_prod-1.0) > 1e-8 and tv == tvv:
+                        elif torch.abs(dot_prod-1.0) > 1e-5 and tv == tvv:
                             print("Test vectors {0} not orthonormalized".format(tv,tv),dot_prod)
                             return
         print("Test vectors are locally orthonormalized")
