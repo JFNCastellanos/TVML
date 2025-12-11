@@ -5,6 +5,7 @@ Poetry_tutorial
 __pycache__/
 sap/build
 sap/near_kernel
+sap/.vscode
 confs/
 fake_tv/
 AMG/build/
