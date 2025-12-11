@@ -3,7 +3,8 @@ pyproject.toml
 Poetry_tutorial
 .ipynb_checkpoints
 __pycache__/
-sap/
+sap/build
+sap/near_kernel
 confs/
 fake_tv/
 AMG/build/

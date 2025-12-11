@@ -17,7 +17,7 @@ def init():
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
     NV = 30   #SAP test vectors used in the loss function 
-    NV_PRED = 10 #Number of test vectors to predict (NV_PRED < NV unless I have many training examples)
+    NV_PRED = 15 #Number of test vectors to predict (NV_PRED < NV unless I have many training examples)
     N = 2*NX*NT
     NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
