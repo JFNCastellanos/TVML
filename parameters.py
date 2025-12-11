@@ -24,7 +24,7 @@ def init():
     TRAIN_PROP = 0.9 #Proportion of total examples used for training
     TRAIN_LEN = int(NO_CONFS*0.9)
     TEST_LEN = NO_CONFS - TRAIN_LEN 
-    PRECISION = "double"
+    PRECISION = "single"
     if PRECISION == "single":
         PREC = torch.float32
         PREC_COMPLEX = torch.complex64
