@@ -38,7 +38,7 @@ class TestLoss():
         For testing the loss function on individual training examples, not batches.
         """   
         ops = opt.Operators(var.BLOCKS_X, var.BLOCKS_T, pred)
-        loss = torch.linalg.norm( (target - ops.P_Pdagg(target)) ) / torch.linalg.norm(target)
+        loss = torch.linalg.norm( (target - ops.P_Pdagg(target)) )**2 / torch.linalg.norm(target)**2
         return loss
     
     def testTrivialCase(self):

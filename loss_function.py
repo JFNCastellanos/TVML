@@ -12,6 +12,9 @@ class CustomLossTorch(nn.Module):
     def __init__(self):
         super().__init__() 
 
+    def ind_loss(self,corrected,target):
+        return torch.linalg.norm(target - corrected)**2
+
     def forward(self, pred, target):
         """
         pred  : Tensor of shape (B, NV, 2, NT, NX)   (complex numbers stored as complex128)
@@ -25,7 +28,8 @@ class CustomLossTorch(nn.Module):
             ops = op.Operators(var.BLOCKS_X, var.BLOCKS_T, pred[i])   
             # loop over the NV dimension (vectorise this later)
             for tv in range(nv):
-                corrected = ops.P_Pdagg(target[i, tv])                # shape (2, NT, NX)
-                diff = target[i, tv] - corrected
-                loss = loss + torch.linalg.norm(diff)
+                loss += self.ind_loss(ops.P_Pdagg(target[i, tv]),target[i, tv])
+                #corrected = ops.P_Pdagg(target[i, tv])                # shape (2, NT, NX)
+                #diff = target[i, tv] - corrected
+                #loss = loss + torch.linalg.norm(diff)**2
         return loss/(batch_size*nv)
