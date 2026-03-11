@@ -101,9 +101,8 @@ def evaluate(dataloader, model, device, version,criterion=None):
     batch_losses : list[float]
         Individual batch losses.
     """
-    # ------------------------------------------------------------------
+    
     # Put the model in eval mode – turns off dropout, batch‑norm updates
-    # ----------------------------------------------------------------
     was_training = model.training          # remember the original state
     model.eval()
 
@@ -112,20 +111,15 @@ def evaluate(dataloader, model, device, version,criterion=None):
         criterion = lf.CustomLossTorch().to(device)
     batch_losses = []
 
-    # ------------------------------------------------------------------
     # No gradient tracking – saves memory and speeds up the forward pass
-    # ------------------------------------------------------------------
     with torch.no_grad():
         for batch_id, batch in enumerate(dataloader):
-            # -------------------------------------------------
             # Load the data (move to the same device as the model)
-            # -------------------------------------------------
             data_batch = batch[0].to(device)          # (B, …)
             near_kernel = batch[1].to(device)          # (B, NV, 2, NT, NX)
 
-            # -------------------------------------------------
+           
             # Forward pass – exactly the same reshaping as in training
-            # -------------------------------------------------
             pred = model(data_batch)                  # (B, 4*NV, NT, NX)
 
             B = pred.shape[0]    #Batch size
@@ -153,16 +147,13 @@ def evaluate(dataloader, model, device, version,criterion=None):
             loss_val = loss.item()
             batch_losses.append(loss_val)
 
-    # ------------------------------------------------------------------
     # Compute the mean loss over the whole set
-    # ------------------------------------------------------------------
     batch_losses = np.array(batch_losses)
     avg_loss = np.mean(batch_losses) 
     std_err = np.std(batch_losses)/np.sqrt(len(batch_losses))
 
-    # ------------------------------------------------------------------
+
     # Restore the original training/eval state of the model
-    # ------------------------------------------------------------------
     model.train(was_training)
 
     return avg_loss, std_err, batch_losses
