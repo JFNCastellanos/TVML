@@ -7,7 +7,6 @@
 #include "dirac_operator.h"
 #include "gauge_conf.h"
 #include "sap.h"
-#include "utils.h"
 
 /*
     One level of the AMG method
@@ -39,7 +38,7 @@ public:
         void D_local(const spinor& in, spinor& out, const int& block);
 
         void funcLocal(const spinor& in, spinor& out) override { 
-            D_local( in, out,blockMPI);
+            D_local( in, out,current_block);
         }
 
         /*
@@ -278,8 +277,6 @@ public:
         //m = mx * t_elements + mt; //Index in the block
     }
 
-    //Reads a set of test vectors from outside of the class
-    void readTv();
 
 };
 

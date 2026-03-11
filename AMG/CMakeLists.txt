@@ -43,16 +43,30 @@ target_compile_options("AMG_${NS}x${NT}_l${LEVELS}" PRIVATE
 			#-fopenmp
 )
 
-find_package(MPI REQUIRED)
+#-----------------For generating test vectors-----------------#
+set(SOURCES_TV
+    src/variables.cpp           #Relevant parameters for the method
+    src/gauge_conf.cpp          #Gauge configuration class
+    src/dirac_operator.cpp      #Implementation of the Dirac operator
+    src/bi_cgstab.cpp           #Bi-CGStab solver for comparison
+    src/conjugate_gradient.cpp  #Conjugate gradient for solving normal equations
+    src/sap.cpp                 #Schwarz alternating method
+    src/amg.cpp                 #Multilevel method
+    src/level.cpp               #Class implementation for one level
+    src/fgmres.cpp              #Flexible GMRES solver
+    src/tests.cpp               #Class implementation for testing solvers
+    src/tvec_generator.cpp      #main function
+)
 
-target_link_libraries("AMG_${NS}x${NT}_l${LEVELS}" PUBLIC MPI::MPI_CXX)
+add_executable("tv_gen_${NS}x${NT}" ${SOURCES_TV})
 
-#find_package(BLAS)
-#include_directories(" /usr/include/cblas/")
-#target_link_libraries("SM_${NS}x${NT}" PUBLIC MPI::MPI_CXX ${BLAS_LIBRARIES})
-
-#find_package(OpenMP REQUIRED)
-#target_link_libraries("SM_${NS}x${NT}" PUBLIC MPI::MPI_CXX OpenMP::OpenMP_CXX)
+target_include_directories("tv_gen_${NS}x${NT}"
+        PUBLIC 
+        ${PROJECT_SOURCE_DIR}/include
+)
+target_compile_options("tv_gen_${NS}x${NT}" PRIVATE
+			-O3
+)
 
 #For windows with MinGW, use the following command to generate the makefile:
 #cmake -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER="C:/msys64/ucrt64/bin/g++.exe" -DCMAKE_C_COMPILER="C:/msys64/ucrt64/bin/gcc.exe" ../

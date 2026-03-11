@@ -13,21 +13,27 @@ typedef std::complex<double> c_double;
 constexpr c_double I_number(0, 1);
 constexpr double pi=3.14159265359;
 
+//FLOPs involved in different complex double operations
+constexpr long long int ca = 2;     //  + complex addition = 2 FLOPs
+constexpr long long int cm = 6;     //  * complex multiplication = 6 FLOPs
+constexpr long long int cd = 11;    //  / complex division = 11 FLOPs (6 mul + 3 add + 2 div)
+constexpr long long int da = 1;     //  double + double = 1 FLOP
+constexpr long long int dm = 1;     //  double * double = 1 FLOP
+constexpr long long int dd = 1;     //  double / double = 1 FLOP
+constexpr long long int dcm = 2;    //  double * complex = 2 FLOPs
+constexpr long long int dcd = 7;    //  double / complex_double = 7 FLOPs (4 mul + 1 add + 2 div)
+constexpr long long int dsq = 1;    //  sqrt(double) = 1 FLOP
+
+extern long long int FLOPS;
+
+
 extern double coarse_time; //Time spent in the coarse grid solver
 extern double smooth_time; //Time spent in the smoother
 extern double total_time; //Total time spent in the multigrid solver
 
 
-namespace  mlearning{
-    extern int confID;
-}
-
 namespace mass{
     extern double m0;
-}
-
-namespace beta{
-    extern double beta;
 }
 
 //------------Lattice parameters--------------//
@@ -71,7 +77,6 @@ namespace AMGV{
     extern int fgmres_k_cycle_restarts;
     extern double fgmres_k_cycle_tol;
     extern int cycle; //Cycling stratey. Cycle = 0 -> V-cycle, = 1 --> K-cycle
-    extern int setup; //setup = 0 -> do the setup as usual, any other value -> use set of given test vectors
 }
 
 namespace LevelV{
@@ -139,6 +144,8 @@ void random_rhs(std::vector<std::vector<c_double>>& vec,const int seed);
 void printParameters();
 
 void saveParameters(double *Iter, double *dIter, double *exTime, double *dexTime, const int nMeas,const int nconf);
+
+void printFLOPS(const long long int& x);
 
 
 #endif 

@@ -31,6 +31,8 @@ void Level::makeAggregates(){
 	}
 	}
 
+	//Operations here are with integers, i.e. no FLOP counting.
+
 }
 
 void Level::printAggregates() {
@@ -113,9 +115,9 @@ void Level::makeDirac(){
 		for(int mu : {0,1}){
 			G2[getG2G3index(x,alf,bet,c,b,mu)] = 0.5 * M[mu][alf][bet] * U[x][mu];
 			G3[getG2G3index(x,alf,bet,c,b,mu)] = 0.5 * P[mu][alf][bet] * std::conj(U[LeftPB_l[level][x][mu]][mu]);
+			FLOPS += (dcm + cm)*2;
 		}
 		
-	
 	}
 	}
 	}
@@ -164,12 +166,15 @@ void Level::D_operator(const spinor& v, spinor& out){
 	for(int alf = 0; alf<2; alf++){
 	for(int c = 0; c<colors; c++){
 		out[x][2*c+alf] = (mass::m0+2)*v[x][2*c+alf];
+		FLOPS += da+dcm;
 	for(int bet = 0; bet<2; bet++){
 	for(int b = 0; b<colors; b++){
 		out[x][2*c+alf] -= G1[getG1index(x,alf,bet,c,b)] * v[x][2*b+bet];
+		FLOPS += ca + cm;
 		for(int mu:{0,1}){
 			out[x][2*c+alf] -= ( G2[getG2G3index(x,alf,bet,c,b,mu)] * SignR_l[level][x][mu] * v[RightPB_l[level][x][mu]][2*b+bet]
 							+ G3[getG2G3index(x,alf,bet,c,b,mu)] * SignL_l[level][x][mu] * v[LeftPB_l[level][x][mu]][2*b+bet] );
+			FLOPS += ca + ca + 4*cm;
 		}
 	}
 	}
@@ -202,7 +207,8 @@ void Level::P_v(const spinor& v,spinor& out){
 			n = nCoords[Agg[a * sites_per_block * colors + i]];
 			s = sCoords[Agg[a * sites_per_block * colors + i]];
 			c = cCoords[Agg[a * sites_per_block * colors + i]];
-			out[n][2*c + s] += interpolator_columns[cc][n][2*c+s] * v[nc][2*cc+s];//v[k][a];		
+			out[n][2*c + s] += interpolator_columns[cc][n][2*c+s] * v[nc][2*cc+s];//v[k][a];	
+			FLOPS += ca + cm;	
 		}
 	}
     
@@ -231,6 +237,7 @@ void Level::Pt_v(const spinor& v,spinor& out) {
 			var = Agg[a * sites_per_block * colors + j]; 
 			n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
 			out[nc][2*cc+s] += std::conj(interpolator_columns[cc][n][2*c+s]) * v[n][2*c+s];
+			FLOPS += ca + cm;
 		}
 	}
 
@@ -268,24 +275,34 @@ void Level::makeCoarseLinks(Level& next_level){
 			
 				//[w*_p^(block,alf)]_{c,alf}(x) [A(x)]^{alf,bet}_{c,b} [w_s^{block,bet}]_{b,bet}(x)
 			A_coeff[indxA] += std::conj(w[p][n][2*c+alf]) * G1[getG1index(n,alf,bet,c,b)] * w[s][n][2*b+bet];
+			FLOPS += ca + cm*2;
 			for(int mu : {0,1}){
 				getLatticeBlock(RightPB_l[level][n][mu], block_r); //block_r: block where RightPB_l[n][mu] lives
 				getLatticeBlock(LeftPB_l[level][n][mu], block_l); //block_l: block where LeftPB_l[n][mu] lives
 				wG2 = std::conj(w[p][n][2*c+alf]) * G2[getG2G3index(n,alf,bet,c,b,mu)]; 
 				wG3 = std::conj(w[p][n][2*c+alf]) * G3[getG2G3index(n,alf,bet,c,b,mu)];
+				FLOPS += cm*2;
 				
 				//Only diff from zero when n+hat{mu} in Block(x)
-				if (block_r == x)
+				if (block_r == x){
 					A_coeff[indxA] += wG2 * w[s][RightPB_l[level][n][mu]][2*b+bet];// * SignR_l[level][n][mu];
+					FLOPS += ca+cm;
+				}
 				//Only diff from zero when n+hat{mu} in Block(x+hat{mu})
-				else if (block_r == RightPB_l[level+1][x][mu])
+				else if (block_r == RightPB_l[level+1][x][mu]){
 					B_coeff[indxBC[mu]] += wG2 * w[s][RightPB_l[level][n][mu]][2*b+bet]; //Sign considered in the operator
+					FLOPS += ca+cm;
+				}
 				//Only diff from zero when n-hat{mu} in Block(x)
-				if (block_l == x)
+				if (block_l == x){
 					A_coeff[indxA] += wG3 * w[s][LeftPB_l[level][n][mu]][2*b+bet];// *  SignL_l[level][n][mu];
+					FLOPS += ca+cm;
+				}
 				//Only diff from zero when n-hat{mu} in Block(x-hat{mu})
-				else if (block_l == LeftPB_l[level+1][x][mu])
+				else if (block_l == LeftPB_l[level+1][x][mu]){
 					C_coeff[indxBC[mu]] += wG3 * w[s][LeftPB_l[level][n][mu]][2*b+bet];
+					FLOPS += ca+cm;
+				}
 	
 			}
 			}	
@@ -347,14 +364,17 @@ void Level::SAP_level_l::D_local(const spinor& in, spinor& out, const int& block
 		for(int alf = 0; alf<2; alf++){
 		for(int c = 0; c<colors; c++){
 				out[x][2*c+alf] = (mass::m0+2)*in[x][2*c+alf];
+				FLOPS += da + dcm;
 			for(int bet = 0; bet<2; bet++){
 			for(int b = 0; b<colors; b++){
 				out[x][2*c+alf] -= parent->G1[parent->getG1index(n,alf,bet,c,b)] * in[x][2*b+bet];
+				FLOPS += ca+cm;
 				for(int mu:{0,1}){
 					out[x][2*c+alf] -= 
 						( parent->G2[parent->getG2G3index(n,alf,bet,c,b,mu)] * SignR_l[parent->level][n][mu] * phi_RPB[mu][2*b+bet]
 						+ parent->G3[parent->getG2G3index(n,alf,bet,c,b,mu)] * SignL_l[parent->level][n][mu] * phi_LPB[mu][2*b+bet]
 						);
+					FLOPS += ca+ca+4*cm;
 				}
 
 			}
@@ -392,11 +412,13 @@ void Level::orthonormalize(){
 					var = Agg[a * sites_per_block * colors + j]; 
 					n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
 					proj += interpolator_columns[nt][n][2*c+s] * std::conj(interpolator_columns[ntt][n][2*c+s]);
+					FLOPS += ca+cm;
 				}
 				for (int j = 0; j < colors * x_elements * t_elements; j++) {
 					var = Agg[a * sites_per_block * colors + j]; 
 					n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
 					interpolator_columns[nt][n][2*c+s] -= proj * interpolator_columns[ntt][n][2*c+s];
+					FLOPS += ca+cm;
 				}
 			}
 			//normalize
@@ -405,24 +427,16 @@ void Level::orthonormalize(){
 				var = Agg[a * sites_per_block * colors + j]; 
 				n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
 				norm += interpolator_columns[nt][n][2*c+s] * std::conj(interpolator_columns[nt][n][2*c+s]);
+				FLOPS += ca+cm;
 			}
 			norm = sqrt(std::real(norm)) + 0.0*c_double(0,1); 
+			FLOPS += dsq;
 			for (int j = 0; j < colors * x_elements * t_elements; j++) {
 				var = Agg[a * sites_per_block * colors + j]; 
 				n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
 				interpolator_columns[nt][n][2*c+s] /= norm;
+				FLOPS += cd;
 			}
 		}
 	} 	
-}
-
-void Level::readTv(){
-	for(int tvID = 0; tvID < LevelV::Ntest[level]; tvID++){
-        std::ostringstream tv_file;
-		tv_file << "../../fake_tv/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
-		<< "/m-018/conf" 
-		<< mlearning::confID << "_fake_tv" << tvID << ".tv";
-
-        readBinaryTv(tv_file.str(),interpolator_columns,tvID,level);
-    }
 }

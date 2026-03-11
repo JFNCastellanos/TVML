@@ -6,7 +6,6 @@
 #include "bi_cgstab.h"
 #include "conjugate_gradient.h"
 #include "amg.h"
-#include "mpi.h"
 
 /*
     Class for testing the different methods
@@ -24,7 +23,7 @@ public:
     void CG(spinor& x);
     void FGMRES_sap(spinor &x,const bool print);
     void SAP(spinor& x,const int iterations,const bool print);
-    int fgmresAMG(spinor& x, const bool print, const int setup);
+    int fgmresAMG(spinor& x, const bool print);
     void multigrid(spinor& x, const bool print);
     
     void check_solution(const spinor& x_sol);

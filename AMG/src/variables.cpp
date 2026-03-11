@@ -4,6 +4,7 @@ typedef std::complex<double> c_double;
 double coarse_time = 0.0; //Time spent in the coarse grid solver
 double smooth_time = 0.0; //Time spent in the smoother
 double total_time = 0.0;
+long long int FLOPS = 0;
 
 
 std::vector<std::vector<int>>Coords = std::vector<std::vector<int>>(LV::Nx, std::vector<int>(LV::Nt, 0));
@@ -13,13 +14,6 @@ void Coordinates() {
 			Coords[x][t] = x * LV::Nt+ t;
 		}
 	}
-}
-namespace beta{
-    double beta = 1;
-}
-
-namespace mlearning{
-    int confID = 0;
 }
 
 namespace mass{
@@ -62,7 +56,7 @@ namespace AMGV {
     int SAP_test_vectors_iterations = 2; //Number of SAP iterations to smooth test vectors
     //Parameters for the coarse level solver. They can be changed in the main function
     int gmres_restarts_coarse_level = 10; 
-    int gmres_restart_length_coarse_level = 20; //GMRES restart length for the coarse level
+    int gmres_restart_length_coarse_level = 400; //GMRES restart length for the coarse level
     double gmres_tol_coarse_level = 0.1; //GMRES tolerance for the coarse level
 
     int gmres_restarts_smoother = 20; //Iterations for GMRES as a smoother (SAP is the default)
@@ -79,7 +73,6 @@ namespace AMGV {
     double fgmres_k_cycle_tol = 0.1;
 
     int cycle = 0; //Cycling stratey. Cycle = 0 -> V-cycle, = 1 --> K-cycle
-    int setup = 0; //do the setup as usual, any other value -> use set of given test vectors
 }
 
 //--------------Parameters for outer FGMRES solver--------------//
@@ -246,8 +239,8 @@ void printParameters(){
             std::cout << "| Cycle = " << "K-cycle" << std::endl;
         std::cout << "| Number of levels = " << AMGV::levels << std::endl;
         std::cout << "| nu1 (pre-smoothing) = " << AMGV::nu1 << " nu2 (post-smoothing) = " << AMGV::nu2 << std::endl;
-        std::cout << "| Number of adaptivity steps for improving the interpolator = " << AMGV::Nit << std::endl;
-        std::cout << "| Number of SAP iterations for smoothing the test vectors = " << AMGV::SAP_test_vectors_iterations << std::endl;
+        std::cout << "| SAP iterations for smoothing test vectors = " << AMGV::SAP_test_vectors_iterations << std::endl;
+        std::cout << "| Number of iterations for improving the interpolator = " << AMGV::Nit << std::endl;
         std::cout << "| Restart length of GMRES at the coarse level = " << LevelV::GMRES_restart_len[LevelV::maxLevel] << std::endl;
         std::cout << "| Restarts of GMRES at the coarse level = " << LevelV::GMRES_restarts[LevelV::maxLevel] << std::endl;
         std::cout << "| GMRES tolerance for the coarse level solution = " << LevelV::GMRES_tol[LevelV::maxLevel] << std::endl;
@@ -324,4 +317,10 @@ void saveParameters(double *Iter, double *dIter, double *exTime, double *dexTime
     }
     results.close();
 
+}
+
+
+void printFLOPS(const long long int& x){
+    long double y = x*1.0;
+    std::cout << "GFLOPS = " << y/1e9 << std::endl;
 }
