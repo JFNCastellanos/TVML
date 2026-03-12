@@ -22,6 +22,7 @@ namespace beta{
 
 namespace mlearning{
     int confID = 0;
+    int set = 0;
 }
 
 namespace mass{
@@ -168,7 +169,7 @@ void readBinaryRhs(std::vector<std::vector<c_double>>& vec, const std::string& n
 
 
 void save_rhs(std::vector<std::vector<c_double>>& rhs,const std::string& name){
-    std::ofstream rhsfile(name);
+    std::ofstream rhsfile(name,std::ios::binary);
     if (!rhsfile.is_open()) {
         std::cerr << "Error opening rhs.txt for writing." << std::endl;
     } 
@@ -178,20 +179,21 @@ void save_rhs(std::vector<std::vector<c_double>>& rhs,const std::string& name){
         for (int n = 0; n < LV::Ntot; ++n) {
             x = n/LV::Nt;
             t = n%LV::Nt;
-            rhsfile << x << std::setw(30) << t << std::setw(30) << 0 << std::setw(30)
-                    << std::setprecision(17) << std::scientific << std::real(rhs[n][0]) << std::setw(30)
-                    << std::setprecision(17) << std::scientific << std::imag(rhs[n][0]) << "\n";
-
-            rhsfile << x << std::setw(30) << t << std::setw(30) << 1 << std::setw(30)
-                    << std::setprecision(17) << std::scientific << std::real(rhs[n][1]) << std::setw(30)
-                    << std::setprecision(17) << std::scientific << std::imag(rhs[n][1]) << "\n";
-          
+            for(int mu = 0; mu < 2; mu++){
+                const double& re = std::real(rhs[n][mu]);
+                const double& im = std::imag(rhs[n][mu]);
+                rhsfile.write(reinterpret_cast<char*>(&x), sizeof(int));
+                rhsfile.write(reinterpret_cast<char*>(&t), sizeof(int));
+                rhsfile.write(reinterpret_cast<char*>(&mu), sizeof(int));
+                rhsfile.write(reinterpret_cast<const char*>(&re), sizeof(double));
+                rhsfile.write(reinterpret_cast<const char*>(&im), sizeof(double));
+            }            
         }
         rhsfile.close();
     }
 
-}
 
+}
 
 void random_rhs(std::vector<std::vector<c_double>>& vec,const int seed){
     c_double I_number(0,1);

@@ -19,8 +19,8 @@ int main() {
     GConf.initialize(); //Initialize a random gauge configuration
 
     double beta = 2;
-    int Nv = 5;    //Number of test vectors to be generated
-    int number_of_confs = 10; //Number of confs to consider.
+    int Nv = 30;    //Number of test vectors to be generated
+    int number_of_confs = 1000; //Number of confs to consider.
     int sap_iterations = 4; //Number of smoothing iterations
     
     std::cout << "Generating Nv=" << Nv << " test vectors for " << number_of_confs << " gauge conf" << std::endl;

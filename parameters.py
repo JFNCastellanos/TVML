@@ -16,9 +16,9 @@ def init():
     BLOCKS_X, BLOCKS_T = 8, 8 #Change to 8, 8
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
-    NV = 30   #SAP test vectors used in the loss function 
+    NV = 20   #SAP test vectors used in the loss function 
     NV_PRED = 10 #Number of test vectors to predict (NV_PRED < NV unless I have many training examples)
-    N = 2*NX*NT
+    N = 2*NX*NT  #Number of degrees of freedom on the fine grid
     NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
     TRAIN_PROP = 0.9 #Proportion of total examples used for training
@@ -46,4 +46,6 @@ def print_parameters():
     print("* Confs used for training={0}".format(int(TRAIN_PROP*NO_CONFS))) 
     print("* Device: {0}".format(DEVICE))
     print("* Precision: {0}".format(PRECISION))
+    print("* DOF on fine grid: {0}".format(N))
+    print("* DOF on coarse grid: {0}".format(NV_PRED*BLOCKS_X*BLOCKS_T*2))
     print("************************************************")

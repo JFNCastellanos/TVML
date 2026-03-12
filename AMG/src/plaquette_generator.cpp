@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
         std::ostringstream NamePlaq;
         NamePlaq << "plaquette_" << LV::Nx << "x" << LV::Nt << "_b" << 
         format(beta).c_str() << "_m" << format(mass::m0).c_str() << "_nconf" << nconf << ".plaq";
-        //GConf.savePlaquette(NamePlaq.str());
+        GConf.savePlaquette(NamePlaq.str());
     }
     std::cout << "Done " << std::endl;
 

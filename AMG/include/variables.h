@@ -34,6 +34,7 @@ extern double total_time; //Total time spent in the multigrid solver
 
 namespace  mlearning{
     extern int confID;
+    extern int set;
 }
 
 namespace mass{

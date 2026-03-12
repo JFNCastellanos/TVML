@@ -102,8 +102,8 @@ class TestDataloader():
         print("Check that plaquette from conf 0 coincides with the info in the file")
         print("(This test is on the CPU because I am opening the binaries directly with numpy)")
         confID = 0
-        path =  '/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel' + \
-            '/b{0}_{1}x{2}/{3}/plaquettes/plaquette_{1}x{2}_b{0}0000_m{4}_nconf{5}.plaq'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
+        path =  '/wsgjsc/home/nietocastellanos1/Documents/TVML/plaquettes' + \
+            '/b{0}_{1}x{2}/{3}/plaquette_{1}x{2}_b{0}0000_m{4}_nconf{5}.plaq'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
         plaquette = read_binary_plaquette(None,path)
         print("- - - U_01(t,x) - - -")
         nx, nt = 0, 0
@@ -130,8 +130,8 @@ class TestDataloader():
     def testPlaquettePt(self):
         print("Check that plaquette from conf 0 coincides with the info in the .pt file")
         confID = 0
-        path =  '/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel' + \
-            '/b{0}_{1}x{2}/{3}/plaquettes/plaquette_{1}x{2}_b{0}0000_m{4}_nconf{5}.plaq'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
+        path =  '/wsgjsc/home/nietocastellanos1/Documents/TVML/plaquettes' + \
+            '/b{0}_{1}x{2}/{3}/plaquette_{1}x{2}_b{0}0000_m{4}_nconf{5}.plaq'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
         #Loading plaquettes
         plaquette = torch.load(path.replace('.plaq','.pt'), mmap=True,weights_only=True)
         plaquette = torch.stack([torch.real(plaquette),torch.imag(plaquette)],dim=0).to(dtype=var.PREC) #[2, NT, NX]

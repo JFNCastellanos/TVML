@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 import parameters as var
 import operators_torch as op
+var.init()
 
 class CustomLossTorch(nn.Module):
     """

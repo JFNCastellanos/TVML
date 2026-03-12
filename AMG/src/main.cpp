@@ -34,7 +34,11 @@ int main() {
     mass::m0 = m0;
     beta::beta = beta;
 
-
+    int nconf;
+    std::cout << "Train or test set (0 or 1) ";
+    std::cin >> mlearning::set;
+    std::cout << "Number of confs ";
+    std::cin >> nconf;
     //Open conf from file//
     GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
     GConf.initialize();
@@ -45,12 +49,24 @@ int main() {
 
     std::vector<int> confsID;
     std::ostringstream confsIDfile;
-    confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt 
-		<< "/m-018/confFiles.txt";
+    if (mlearning::set == 0){
+        std::cout << "Analyzing training set tv" << std::endl;
+        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-018/train/confFiles.txt";
+    }
+    else if (mlearning::set == 1){
+        std::cout << "Analyzing testing set tv" << std::endl;
+        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-018/test/confFiles.txt";
+    }
+    else{ 
+        std::cout << "Introduce a valid number for the set of configurations (train or test)" << std::endl;
+        exit(1);
+    }
+
+
     readConfsID(confsID,confsIDfile.str());
     
     
-    int nconf = 50;
+    
     std::vector<double> smooth_tv_amg_iter(nconf,0);
     std::vector<double> random_tv_amg_iter(nconf,0);
     std::vector<double> learned_tv_amg_iter(nconf,0);
