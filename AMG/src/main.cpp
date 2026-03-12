@@ -14,39 +14,9 @@
 #include <cstdint>
 #include <cstring>
 
-//mean of a vector
-template <typename T>
-double mean(std::vector<T> x){ 
-    double prom = 0;
-    for (T i : x) {
-        prom += i*1.0;
-    }   
-    prom = prom / x.size();
-    return prom;
-}
-
-template <typename T>
-double standard_deviation(const std::vector<T>& data) {
-    if (data.empty()) return 0.0;
-    double mean = std::accumulate(data.begin(), data.end(), 0.0) / data.size();
-    double sq_sum = 0.0;
-    for (const auto& val : data) {
-        sq_sum += (static_cast<double>(val) - mean) * (static_cast<double>(val) - mean);
-    }
-    return std::sqrt(sq_sum / data.size());
-}
-
-//Formats decimal numbers
-//For opening file with confs 
-static std::string format(const double& number) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(4) << number;
-    std::string str = oss.str();
-    str.erase(str.find('.'), 1); //Removes decimal dot 
-    return str;
-}
 
 int main() {
+    std::cout << "Nx " << LV::Nx << " Nt " << LV::Nt << std::endl;
     readParameters("../parameters.dat");
     srand(19);
     //srand(time(0));
@@ -56,72 +26,95 @@ int main() {
 
     AMGV::cycle = 0; //K-cycle = 1, V-cycle = 0
     AMGV::Nit = 0;
-    AMGV::SAP_test_vectors_iterations = 4;
+    int SAP_test_vec_iter = 4;
+    AMGV::SAP_test_vectors_iterations = SAP_test_vec_iter;
     //-0.1023;//-0.0933;//-0.18840579710144945; //0.0709
-    double m0 = mass::m0; 
+    double m0 = -0.18840579710144945; 
+    double beta = 2;
+    mass::m0 = m0;
+    beta::beta = beta;
 
 
     //Open conf from file//
     GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
     GConf.initialize();
 
-    double beta;
-    int nconf;
     std::string confFile;
     std::string rhsFile;
-
-    //---Input data---//
-    std::cout << "Nx " << LV::Nx << " Nt " << LV::Nt << std::endl;
-    std::cout << "beta : ";
-    std::cin >> beta;
-    std::cout << "m0: ";
-    std::cin >> m0;
-    std::cout << "Configuration id: ";
-    std::cin >> nconf;
-    std::cout << "Configuration file path: ";
-    std::cin >> confFile;
-    std::cout << "RHS file path: ";
-    std::cin >> rhsFile;
-    std::cout << " " << std::endl;
-    
-   
-    mass::m0 = m0;
-
-    //Parameters in variables.cpp
-
     printParameters();
-    std::cout << "Conf read from " << confFile << std::endl;
-    std::cout << "rhs read from " << rhsFile << std::endl;
+
+    std::vector<int> confsID;
+    std::ostringstream confsIDfile;
+    confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt 
+		<< "/m-018/confFiles.txt";
+    readConfsID(confsID,confsIDfile.str());
     
     
-    const spinor x0(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0)); //Intial guesss
-    spinor rhs(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-
-    GConf.readBinary(confFile);
-    readBinaryRhs(rhs,rhsFile);
-
-    sap.set_params(GConf.Conf, m0); //Setting gauge conf and m0 for SAP 
-
-    //Solution buffers
-    spinor x_bi(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-    spinor x_cg(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-    spinor xSAP(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-    spinor XFGMRES_SAP(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-    spinor xFAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-    spinor xGMRES(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-    //spinor xAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-
-
+    int nconf = 50;
+    std::vector<double> smooth_tv_amg_iter(nconf,0);
+    std::vector<double> random_tv_amg_iter(nconf,0);
+    std::vector<double> learned_tv_amg_iter(nconf,0);
+    for (int id = 0; id < nconf; id++){
+        mlearning::confID = confsID[id];
+        
     
-    Tests test(GConf, rhs, x0 ,m0);
-    test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
-    test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
-    test.SAP(xSAP,400,true);
-    test.FGMRES_sap(XFGMRES_SAP,true);
+        std::ostringstream gauge_conf_file;
+        gauge_conf_file << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b"
+        << beta << "_" << LV::Nx << "x" << LV::Nt 
+		    << "/m-018/"
+            <<
+            "2D_U1_Ns"<< LV::Nx <<"_Nt" << LV::Nt << "_b" 
+            << format(beta::beta).c_str() << "_m" 
+            << format(mass::m0).c_str() << "_" 
+            << mlearning::confID << ".ctxt";
 
-    test.GMRES(xGMRES, 50, 100,true);
-    test.fgmresAMG(xFAMG, true);
-    test.check_solution(xFAMG);
+
+
+        GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
+        GConf.readBinary(gauge_conf_file.str());
+
+        const spinor x0(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0)); //Intial guesss
+        spinor rhs(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+
+        random_rhs(rhs,0);
+        //readBinaryRhs(rhs,rhsFile);
+    
+    
+
+        //Solution buffers
+        spinor x_bi(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+        spinor x_cg(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+        spinor xFAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+        spinor xFAMGRandom(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+        spinor xFAMGSetup2(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
+        
+
+        std::cout << "/////////////// Testing with confID " << mlearning::confID << "///////////////" << std::endl;
+    
+        Tests test(GConf, rhs, x0 ,m0);
+        //test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
+        //test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
+        AMGV::SAP_test_vectors_iterations = SAP_test_vec_iter;
+        std::cout << "Smoothing test vectors with " << AMGV::SAP_test_vectors_iterations << " SAP iterations" << std::endl;
+        int setup = 0;  //Usual set up (smoothing test vectors)
+        smooth_tv_amg_iter[id] = test.fgmresAMG(xFAMG, true,setup);
+    
+        std::cout << "Random test vectors " << std::endl;
+        AMGV::SAP_test_vectors_iterations = 0;
+        random_tv_amg_iter[id] = test.fgmresAMG(xFAMGRandom, true,setup);
+
+        std::cout << "********************************************************************" << std::endl;
+        std::cout << " Reading test vectors from file " << std::endl;
+   
+        setup = 1; //machine learning generated test vectors
+        learned_tv_amg_iter[id] = test.fgmresAMG(xFAMGSetup2, true,setup);
+   
+    
+    }
+
+    std::cout << "Mean iteration count for smoothed test vectors " << mean(smooth_tv_amg_iter) << " +- " << standard_deviation(smooth_tv_amg_iter) << std::endl;
+    std::cout << "Mean iteration count for random test vectors   " << mean(random_tv_amg_iter) << " +- " << standard_deviation(random_tv_amg_iter) << std::endl;
+    std::cout << "Mean iteration count for learned test vectors  " << mean(learned_tv_amg_iter) << " +- " << standard_deviation(learned_tv_amg_iter) << std::endl;
 
     return 0;
 }

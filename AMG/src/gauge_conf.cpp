@@ -58,3 +58,39 @@ void GaugeConf::readBinary(const std::string& name){
     infile.close();
       
 }
+
+
+void GaugeConf::Compute_Plaquette01() {
+	//U_mv(x) = U_m(x) U_v(x+m) U*_m(x+v) U*_v(x)
+	//mu = 0 time direction, mu = 1 space direction
+    std::vector<std::vector<int>> &LeftPB = LeftPB_l[0];
+	std::vector<std::vector<int>> &RightPB = RightPB_l[0];
+    for (int n = 0; n<Ntot; n++){
+        //int Coord0 = Coords[x][t], Coord1 = Coords[x][modulo(t + 1, Nt)], Coord2 = Coords[modulo(x + 1, Ns)][t];
+		Plaquette01[n] = Conf[n][0] * Conf[RightPB[n][0]][1] * std::conj(Conf[RightPB[n][1]][0]) * std::conj(Conf[n][1]);
+    }		
+}
+
+
+void GaugeConf::savePlaquette(const std::string& name){
+    std::ofstream plaquettefile(name,std::ios::binary);
+    if (!plaquettefile.is_open()) {
+        std::cerr << "Error opening plaquette file for writing." << std::endl;
+    } 
+    else {
+        int x,t;
+        //x, t, mu, real part, imaginary part
+        for (int n = 0; n < LV::Ntot; ++n) {
+            x = n/LV::Nt;
+            t = n%LV::Nt;
+            const double& re = std::real(Plaquette01[n]);
+            const double& im = std::imag(Plaquette01[n]);
+            plaquettefile.write(reinterpret_cast<char*>(&x), sizeof(int));
+            plaquettefile.write(reinterpret_cast<char*>(&t), sizeof(int));
+            plaquettefile.write(reinterpret_cast<const char*>(&re), sizeof(double));
+            plaquettefile.write(reinterpret_cast<const char*>(&im), sizeof(double));             
+        }
+        plaquettefile.close();
+    }
+
+}

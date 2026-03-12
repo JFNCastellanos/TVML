@@ -13,7 +13,7 @@ def init():
     M0_STRING = utils.formatt(M0) #format string
     NO_CONFS = 1000 #number of confs to load
     M0_FOLDER = "m-018" #folder with confs
-    BLOCKS_X, BLOCKS_T = 2, 2 #Change to 8, 8
+    BLOCKS_X, BLOCKS_T = 8, 8 #Change to 8, 8
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
     NV = 30   #SAP test vectors used in the loss function 

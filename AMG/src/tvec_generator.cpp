@@ -2,21 +2,11 @@
 #include <ctime>
 #include <string>
 #include <sstream>
+#include "utils.h"
 #include "params.h" //Read parameters for lattice blocks, test vectors and SAP blocks
 #include "boundary.h"
 #include "gauge_conf.h"
 #include "sap.h"
-
-
-//Formats decimal numbers
-//For opening file with confs 
-static std::string format(const double& number) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(4) << number;
-    std::string str = oss.str();
-    str.erase(str.find('.'), 1); //Removes decimal dot 
-    return str;
-}
 
 int main() {
     srand(time(0));

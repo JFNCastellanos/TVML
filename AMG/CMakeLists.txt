@@ -68,5 +68,30 @@ target_compile_options("tv_gen_${NS}x${NT}" PRIVATE
 			-O3
 )
 
+#-----------------For computing the plaquettes-----------------#
+set(SOURCES_PLAQ
+    src/variables.cpp           #Relevant parameters for the method
+    src/gauge_conf.cpp          #Gauge configuration class
+    src/dirac_operator.cpp      #Implementation of the Dirac operator
+    src/bi_cgstab.cpp           #Bi-CGStab solver for comparison
+    src/conjugate_gradient.cpp  #Conjugate gradient for solving normal equations
+    src/sap.cpp                 #Schwarz alternating method
+    src/amg.cpp                 #Multilevel method
+    src/level.cpp               #Class implementation for one level
+    src/fgmres.cpp              #Flexible GMRES solver
+    src/tests.cpp               #Class implementation for testing solvers
+    src/plaquette_generator.cpp      #main function
+)
+
+add_executable("plaq_gen_${NS}x${NT}" ${SOURCES_PLAQ})
+
+target_include_directories("plaq_gen_${NS}x${NT}"
+        PUBLIC 
+        ${PROJECT_SOURCE_DIR}/include
+)
+target_compile_options("plaq_gen_${NS}x${NT}" PRIVATE
+			-O3
+)
+
 #For windows with MinGW, use the following command to generate the makefile:
 #cmake -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER="C:/msys64/ucrt64/bin/g++.exe" -DCMAKE_C_COMPILER="C:/msys64/ucrt64/bin/gcc.exe" ../

@@ -75,7 +75,9 @@ void Tests::SAP(spinor& x,const int iterations, const bool print){
 
 }
 
-int Tests::fgmresAMG(spinor& x, const bool print){
+int Tests::fgmresAMG(spinor& x, const bool print, const int setup){
+    //setup = 0 -> usual setup phase, setup = 1 -> ML-generated test vectors
+    AMGV::setup = setup;
     const bool save = false;
     std::cout << "--------------FGMRES with AMG --------------" << std::endl;
     int iter;

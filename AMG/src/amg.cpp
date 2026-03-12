@@ -5,89 +5,103 @@ void AlgebraicMG::setUpPhase(const int& Nit){
 	static std::mt19937 randomInt(50); //Same seed for all the MPI copies
 	std::uniform_real_distribution<double> distribution(-1.0, 1.0); //mu, standard deviation
 	
+	if (AMGV::setup == 0){
 
-	//Generate test vectors at the fine level
-	for (int i = 0; i < LevelV::Ntest[0]; i++) {
-		for (int n = 0; n < LevelV::Nsites[0]; n++) {
-		for (int dof = 0; dof < LevelV::DOF[0]; dof++) {
-			levels[0]->interpolator_columns[i][n][dof] = distribution(randomInt) + I_number * distribution(randomInt);
-			FLOPS += da+dcm;
-		}
-		}
-	}
-	
-	//v_l = P^dagger v_{l-1}
-	for(int l=1; l<AMGV::levels-1; l++){
-		for(int i = 0; i<LevelV::Ntest[l];i++){
-			if (i<LevelV::Ntest[l-1]){
-				levels[l-1]->Pt_v(levels[l-1]->interpolator_columns[i],levels[l]->interpolator_columns[i]);
+		//Generate test vectors at the fine level
+		for (int i = 0; i < LevelV::Ntest[0]; i++) {
+			for (int n = 0; n < LevelV::Nsites[0]; n++) {
+			for (int dof = 0; dof < LevelV::DOF[0]; dof++) {
+				levels[0]->interpolator_columns[i][n][dof] = distribution(randomInt) + I_number * distribution(randomInt);
+				FLOPS += da+dcm;
 			}
-			else{
-				for (int n = 0; n < LevelV::Nsites[l]; n++) {
-				for (int dof = 0; dof < LevelV::DOF[l]; dof++) {
-					levels[l]->interpolator_columns[i][n][dof] =  distribution(randomInt) + I_number * distribution(randomInt);
-					FLOPS += da+dcm;
-				}	
+			}
+		}
+	
+		//v_l = P^dagger v_{l-1}
+		for(int l=1; l<AMGV::levels-1; l++){
+			for(int i = 0; i<LevelV::Ntest[l];i++){
+				if (i<LevelV::Ntest[l-1]){
+					levels[l-1]->Pt_v(levels[l-1]->interpolator_columns[i],levels[l]->interpolator_columns[i]);
+				}
+				else{
+					for (int n = 0; n < LevelV::Nsites[l]; n++) {
+					for (int dof = 0; dof < LevelV::DOF[l]; dof++) {
+						levels[l]->interpolator_columns[i][n][dof] =  distribution(randomInt) + I_number * distribution(randomInt);
+						FLOPS += da+dcm;
+					}	
+					}
 				}
 			}
 		}
-	}
 
 	
 
-	//Smoothing the test vectors
-    for(int l=0; l<AMGV::levels-1; l++){
-        spinor rhs(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
-		for (int i = 0; i < LevelV::Ntest[l]; i++) {
-			//Approximately solving D x = 0
-            levels[l]->sap_l.SAP(rhs,levels[l]->interpolator_columns[i],AMGV::SAP_test_vectors_iterations,SAPV::sap_blocks_per_proc,false);
-		}
-		levels[l]->orthonormalize(); 
-		levels[l]->makeCoarseLinks(*levels[l+1]); 
-	}
-
-	//Adaptivity part
-	
-    std::cout << "Improving interpolator" << std::endl;
-    
-	for (int it = 0; it < Nit; it++) {
-		std::cout << "****** Bootstrap iteration " << it << " ******" << std::endl;
-		for (int l = 0; l<AMGV::levels-1; l++){
-			spinor rhs(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
-			spinor Dv(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
-			spinor zero(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
+		//Smoothing the test vectors
+    	for(int l=0; l<AMGV::levels-1; l++){
+        	spinor rhs(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
 			for (int i = 0; i < LevelV::Ntest[l]; i++) {
-				levels[l]->test_vectors[i] = zero; 
-
-				levels[l]->D_operator(levels[l]->interpolator_columns[i], Dv); //Dv = D v
-				for(int n = 0; n < LevelV::Nsites[l]; n++) {
-				for(int dof = 0; dof < LevelV::DOF[l]; dof++) {
-					rhs[n][dof] = levels[l]->interpolator_columns[i][n][dof] - Dv[n][dof]; //rhs = v - D v
-					FLOPS += ca;
-				}
-				}
-
-				if (AMGV::cycle == 0)
-					v_cycle(l, rhs, levels[l]->test_vectors[i]);
-				else if (AMGV::cycle == 1)
-					k_cycle(l, rhs, levels[l]->test_vectors[i]);
-
-				for(int n = 0; n < LevelV::Nsites[l]; n++) {
-				for(int dof = 0; dof < LevelV::DOF[l]; dof++) {
-					levels[l]->test_vectors[i][n][dof] += levels[l]->interpolator_columns[i][n][dof]; //v = v + Cycle(v-Dv)
-					FLOPS += ca;
-				}
-				}
+				//Approximately solving D x = 0
+            	levels[l]->sap_l.SAP(rhs,levels[l]->interpolator_columns[i],AMGV::SAP_test_vectors_iterations,SAPV::sap_blocks_per_proc,false);
 			}
-			//Build the interpolator between level l and l+1
-			levels[l]->interpolator_columns = levels[l]->test_vectors; 
 			levels[l]->orthonormalize(); 
-			levels[l]->makeCoarseLinks(*levels[l+1]); //Make coarse gauge links which define the operator D for the next level
+			levels[l]->makeCoarseLinks(*levels[l+1]); 
+		}
+
+		//Adaptivity part
+	
+    	std::cout << "Improving interpolator" << std::endl;
+    
+		for (int it = 0; it < Nit; it++) {
+			std::cout << "****** Bootstrap iteration " << it << " ******" << std::endl;
+			for (int l = 0; l<AMGV::levels-1; l++){
+				spinor rhs(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
+				spinor Dv(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
+				spinor zero(LevelV::Nsites[l], c_vector(LevelV::DOF[l],0));
+				for (int i = 0; i < LevelV::Ntest[l]; i++) {
+					levels[l]->test_vectors[i] = zero; 
+
+					levels[l]->D_operator(levels[l]->interpolator_columns[i], Dv); //Dv = D v
+					for(int n = 0; n < LevelV::Nsites[l]; n++) {
+					for(int dof = 0; dof < LevelV::DOF[l]; dof++) {
+						rhs[n][dof] = levels[l]->interpolator_columns[i][n][dof] - Dv[n][dof]; //rhs = v - D v
+						FLOPS += ca;
+					}
+					}
+
+					if (AMGV::cycle == 0)
+						v_cycle(l, rhs, levels[l]->test_vectors[i]);
+					else if (AMGV::cycle == 1)
+						k_cycle(l, rhs, levels[l]->test_vectors[i]);
+
+					for(int n = 0; n < LevelV::Nsites[l]; n++) {
+					for(int dof = 0; dof < LevelV::DOF[l]; dof++) {
+						levels[l]->test_vectors[i][n][dof] += levels[l]->interpolator_columns[i][n][dof]; //v = v + Cycle(v-Dv)
+						FLOPS += ca;
+					}
+					}
+				}
+				//Build the interpolator between level l and l+1
+				levels[l]->interpolator_columns = levels[l]->test_vectors; 
+				levels[l]->orthonormalize(); 
+				levels[l]->makeCoarseLinks(*levels[l+1]); //Make coarse gauge links which define the operator D for the next level
+			}
+		}
+		
+	}
+
+	else{
+		for (int l = 0; l<AMGV::levels-1; l++){
+			//For a given set of test vectors we just do the local orthonormalization and create the coarse gauge links
+			levels[l]->readTv(); 
+			//	checkTv(levels[l]->interpolator_columns,l,0);
+			std::cout << "reading test vectors from files " << std::endl;
+			levels[l]->orthonormalize(); 
+			levels[l]->makeCoarseLinks(*levels[l+1]);
 		}
 	}
-	
-    std::cout << "Set-up phase finished" << std::endl;
+	std::cout << "Set-up phase finished" << std::endl;
 	printFLOPS(FLOPS);
+
 }
 
 void AlgebraicMG::v_cycle(const int& l, const spinor& eta_l, spinor& psi_l){

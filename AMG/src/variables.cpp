@@ -16,10 +16,17 @@ void Coordinates() {
 	}
 }
 
+namespace beta{
+    double beta = 1;
+}
+
+namespace mlearning{
+    int confID = 0;
+}
+
 namespace mass{
     double m0 = 0; //Default mass
 }
-
 namespace LevelV{
     int BlocksX[AMGV::levels-1];
     int BlocksT[AMGV::levels-1];
@@ -73,6 +80,7 @@ namespace AMGV {
     double fgmres_k_cycle_tol = 0.1;
 
     int cycle = 0; //Cycling stratey. Cycle = 0 -> V-cycle, = 1 --> K-cycle
+    int setup = 0;
 }
 
 //--------------Parameters for outer FGMRES solver--------------//

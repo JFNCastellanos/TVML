@@ -31,6 +31,20 @@ def binaryPlaq2ptPlaq():
         n +=1
     print("Done")
 
+def binaryTestV2ptTestV():
+     PATH_TV = '/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel' + \
+            '/b{0}_{1}x{2}/{3}/'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING)
+    print("Converting binary files of test vectors to .pt files")
+    n = 0
+    for path in sorted(glob(PATH_TV+"/*.tv")): 
+        arr = read_binary_plaquette("",path)
+        torch.save(torch.from_numpy(arr), path.replace(".tv", ".pt"))
+        if ( n % (var.NO_CONFS*var.NV // 10) == 0 and n > 0):
+            print("Test vector {0}/{1}".format(n,var.NO_CONFS*var.NV))
+        n +=1
+    print("Done")
+    
+
 #idx = 0
 #conf_file = conf_files[idx]
 #gauge_conf = read_binary_conf(None,conf_file)
