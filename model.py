@@ -33,15 +33,15 @@ conv_layers = nn.Sequential(
 linear_layers = nn.Sequential(
             #state size 24
             nn.Linear(128, 256,dtype=var.PREC), #We multiply by the number of output channels
-            #nn.Dropout(p=0.1),
+            nn.Dropout(p=0.3),
             nn.BatchNorm1d(256,dtype=var.PREC),
             nn.PReLU(256,dtype=var.PREC),
     
-            nn.Linear(256, 512,dtype=var.PREC), #We multiply by the number of output channels
+            #nn.Linear(256, 512,dtype=var.PREC), #We multiply by the number of output channels
             #nn.Dropout(p=0.1),
-            nn.BatchNorm1d(512,dtype=var.PREC),
-            nn.PReLU(512,dtype=var.PREC),
-            nn.Linear(512, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
+            #nn.BatchNorm1d(512,dtype=var.PREC),
+            #nn.PReLU(512,dtype=var.PREC),
+            nn.Linear(256, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
@@ -69,12 +69,7 @@ linear_layers_v2 = nn.Sequential(
             #nn.Dropout(p=0.1),
             nn.BatchNorm1d(128,dtype=var.PREC),
             nn.PReLU(128,dtype=var.PREC),
-    
-            nn.Linear(128, 256,dtype=var.PREC), #We multiply by the number of output channels
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm1d(256,dtype=var.PREC),
-            nn.PReLU(256,dtype=var.PREC),
-            nn.Linear(256, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
+            nn.Linear(128, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
