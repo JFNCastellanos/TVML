@@ -14,6 +14,7 @@
 int main(int argc, char **argv) {
 
     srand(time(0));    
+    readParameters("../parameters.dat");
     Coordinates(); //Builds array with coordinates of the lattice points x * Nt + t
     boundary(); //Builds LeftPB and RightPB (periodic boundary for U_mu(n))
     
@@ -25,9 +26,7 @@ int main(int argc, char **argv) {
     int number_of_confs = 1000;
     
     std::cout << "Computing and storing the plaquettes... " << std::endl;
-    for(int nconf = 0; nconf<number_of_confs; nconf++){
-   
-    
+    for(int nconf = 0; nconf<number_of_confs; nconf++){    
         std::ostringstream NameData;
         NameData << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b" <<
         beta << "_" << LV::Nx << "x" << LV::Nt << "/m-018/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << 
@@ -35,7 +34,7 @@ int main(int argc, char **argv) {
         GConf.readBinary(NameData.str());
 
         GConf.Compute_Plaquette01();
-        if (nconf == 0){
+        if (nconf < 20){
             c_vector Plaquette01 = GConf.getPlaq();
             std::cout << "U_01(0,0) " << Plaquette01[0] << std::endl;
             int nx = 0, nt = 1;
