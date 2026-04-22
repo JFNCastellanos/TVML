@@ -3,6 +3,7 @@ from opendataset import ConfsDataset, read_binary_plaquette #class for opening g
 import utils
 import parameters as var
 import numpy as np
+import gauge_equivariant as ge
 var.init()
 
 
@@ -50,3 +51,42 @@ class TestLCNN():
         print("W(0,-1)={0}, Wkxmu(0,0)={1}".format(self.w[self.confID,0,0,-1],wkxmu[self.confID,0,0,0]))
         print("W(0,-1)={0}, Wkxmu(0,0)={1}".format(self.w[self.confID,0,0,-1],wkxmu[self.confID,0,0,0]))
         return wkxmu
+
+    def print_parallel_transport(self):
+        w = self.w
+        print("Transporting W(x) to W(x-k hat{0})\n")
+        k, mu, orientation = 1, 0, +1
+        wkxmu = torch.roll(w,shifts=k*orientation,dims=2+mu)   #w[(t,x)- k * orientation *hat{mu}]
+        for x in range(5):
+            for t in range(5):
+                print(np.round(w[0,0,t-1,x].item(),3),"+i",np.round(w[0,1,t-1,x].item(),3),end="  ")
+            print()
+        print()
+        for x in range(5):
+            for t in range(5):
+                print(np.round(wkxmu[0,0,t,x].item(),3),"+i",np.round(wkxmu[0,1,t,x].item(),3),end="  ")
+            print()
+        print("Transporting W(x) to W(x-k hat{1}) \n")
+        k, mu, orientation = 1, 1, 1
+        wkxmu = torch.roll(w,shifts=k*orientation,dims=2+mu)   #w[(t,x)- k * orientation *hat{mu}]
+        for x in range(5):
+            for t in range(5):
+                print(np.round(w[0,0,t,x-1].item(),3),"+i",np.round(w[0,1,t,x-1].item(),3),end="  ")
+            print()
+        print()
+        for x in range(5):
+            for t in range(5):
+                print(np.round(wkxmu[0,0,t,x].item(),3),"+i",np.round(wkxmu[0,1,t,x].item(),3),end="  ")
+            print()
+        
+    def LConv_test(self):
+        kernel_size = 3
+        n_out = 4
+        n_in = 2
+        print("Gauge equivariant convolution, in_features={0}, out_features={1}, ksize={2}".format(n_in,n_out,kernel_size))
+        lconv = ge.LConv( n_in, n_out,kernel_size)
+        out = lconv(self.w)
+        print("Input shape",self.w.shape)
+        print("Output shape",out.shape)
+
+        
