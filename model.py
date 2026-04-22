@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import parameters as var
+import gauge_equivariant as ge
+var.init()
 
 #torch.nn.Conv2d(in_channels, out_channels, kernel_size,
 #stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', 
@@ -73,6 +75,27 @@ linear_layers_v2 = nn.Sequential(
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
+
+#gauge equivariant convolutional layers
+lcnn_layers = nn.Sequential(
+            ge.LConv( 2, 8,3),
+            nn.PReLU(8,dtype=var.PREC,device=var.DEVICE),
+                
+            ge.LConv( 8, 16,3),
+            nn.PReLU(16,dtype=var.PREC,device=var.DEVICE),
+                
+            ge.LConv( 16, 32,3),
+            nn.PReLU(32,dtype=var.PREC,device=var.DEVICE),
+                
+            ge.LConv( 32, 64,3),
+            nn.PReLU(64,dtype=var.PREC,device=var.DEVICE),
+                
+            ge.LConv( 64, 128,3),
+    
+            ge.LConv( 128, 4*var.NV_PRED,3),
+            nn.PReLU(4*var.NV_PRED,dtype=var.PREC,device=var.DEVICE)
+)
+
 class TvGenerator(nn.Module):
     """
     CNN for generating test vectors
@@ -80,11 +103,18 @@ class TvGenerator(nn.Module):
     def __init__(self, ngpu,batch_size):
         super(TvGenerator, self).__init__()
         self.ngpu = ngpu
-        self.conv_layers = conv_layers
-        self.linear_layers = linear_layers
+        if var.GAUGE_EQ == False:
+            self.conv_layers = conv_layers
+            self.linear_layers = linear_layers
+        else:
+            self.lcnn_layers = lcnn_layers
         self.batch_size = batch_size
     def forward(self, input):
-        x = self.conv_layers(input)
-        x = x.squeeze() #We remove the trivial dimensions
-        x = self.linear_layers(x)
+        if var.GAUGE_EQ == False:
+            x = self.conv_layers(input)
+            x = x.squeeze() #We remove the trivial dimensions
+            x = self.linear_layers(x)
+        else:  
+            x = self.lcnn_layers(input)
+            x = x.squeeze() #We remove the trivial dimensions
         return x.view(self.batch_size,var.NV_PRED,4,var.NT,var.NX)

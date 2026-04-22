@@ -8,6 +8,7 @@ def init():
     """
     global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP, PRECISION, PREC, PREC_COMPLEX
     global TRAIN_LEN, TEST_LEN, NV_PRED
+    global GAUGE_EQ
     BETA, NX, NT= 2, 32, 32
     M0 = -0.18840579710144945 
     M0_STRING = utils.formatt(M0) #format string
@@ -33,6 +34,7 @@ def init():
         PREC_COMPLEX = torch.complex128
     else:
         print("Give a valid floating point precision")
+    GAUGE_EQ=True
     
 def print_parameters():
     print("*********** Configuration parameters ***********")
@@ -48,4 +50,5 @@ def print_parameters():
     print("* Precision: {0}".format(PRECISION))
     print("* DOF on fine grid: {0}".format(N))
     print("* DOF on coarse grid: {0}".format(NV_PRED*BLOCKS_X*BLOCKS_T*2))
+    print("* Training gauge equivariant model: {0}".format(GAUGE_EQ))
     print("************************************************")

@@ -89,4 +89,30 @@ class TestLCNN():
         print("Input shape",self.w.shape)
         print("Output shape",out.shape)
 
-        
+
+def test_LCNN_layers():
+    batch_size = 100
+    w = torch.rand((batch_size,2,var.NT,var.NX),dtype=var.PREC).to(var.DEVICE)
+    #gauge equivariant convolutional layers
+    print("Input shape",w.shape)
+    lcnn_layers = torch.nn.Sequential(
+            ge.LConv( 2, 8,3),
+            ge.LConv( 8, 16,3),
+            ge.LConv( 16, 32,3),
+            ge.LConv( 32, 64,3),
+            ge.LConv( 64, 4*var.NV_PRED,3),
+            torch.nn.PReLU(4*var.NV_PRED,dtype=var.PREC,device=var.DEVICE)
+    )
+    w = lcnn_layers(w)
+    print("Output shape after convolution",w.shape)
+    #gauge equivariant convolutional layers
+
+    
+    
+    #w = w.flatten(start_dim=1)
+    #print("Output shape after flatten",w.shape)
+    #ge_linear_layers = torch.nn.Sequential(
+    #        torch.nn.Linear(w.shape[1], 4*var.NV_PRED*var.NT*var.NX,bias=False,device=var.DEVICE,dtype=var.PREC),
+    #)
+    #w = ge_linear_layers(w)
+    #print("Output shape after linear layer",w.shape)

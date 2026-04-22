@@ -29,10 +29,13 @@ def train(dataloader, model, optimizer,losses,version):
         # Load the data
         data_batch   = batch[0].to(var.DEVICE)             # shape (B, 6, NT, NX)  
         near_kernel   = batch[1].to(var.DEVICE)            # shape (B, NV, 2, NT, NX)
-
         # Predicted test vectors
         # model returns a real‑valued tensor of shape [B, 4*NV, NT, NX]
-        pred = model(data_batch)                   
+        if var.GAUGE_EQ == False:
+            pred = model(data_batch)       
+        else:
+            w = data_batch[:, 4:6, :, :]    # shape (B, 2, NT, NX) ignore the gauge confs
+            pred = model(w)    
         # Reshape / convert to complex dtype (needed for operators)
         # Example: real/imag in 4 channels (Re0, Re1, Im0, Im1)
         B = pred.shape[0]                                        #Batch size
@@ -120,8 +123,12 @@ def evaluate(dataloader, model, device, version,criterion=None):
 
            
             # Forward pass – exactly the same reshaping as in training
-            pred = model(data_batch)                  # (B, 4*NV, NT, NX)
-
+            if var.GAUGE_EQ == False:
+                pred = model(data_batch)       
+            else:
+                w = data_batch[:, 4:6, :, :]    #shape (B, 2, NT, NX) 
+                pred = model(w)  
+           
             B = pred.shape[0]    #Batch size
             pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
 

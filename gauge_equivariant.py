@@ -6,9 +6,11 @@ var.init()
 
 #f([U],[W]) --> U are the gauge configurations and W the locally transforming quantites
 # T(U) = Omega(x) U(x) Omega^+(x+mu),   T(W) = Omega(x) W(x) Omega^+(x)
-class LConv(torch.nn.Module):
+class LConv(nn.Module):
     """
     A lattice gauge equivariant convolution
+    I don't really need the gauge links in the case of the Schwinger model. The U(1) gauge 
+    group makes many thigns gauge invariant quite easily.
     f_i(U,W) = Sum_{j,mu,k} Omega_{i,j,mu,k} W_j(x+k hat{mu})
 
     The kernel size in this example is 2 and the total number of (complex) weights is 5.
