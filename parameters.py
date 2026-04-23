@@ -34,7 +34,7 @@ def init():
         PREC_COMPLEX = torch.complex128
     else:
         print("Give a valid floating point precision")
-    GAUGE_EQ=True
+    GAUGE_EQ=False
     
 def print_parameters():
     print("*********** Configuration parameters ***********")

@@ -40,7 +40,7 @@ class LConv(nn.Module):
         #w.shape = (Batch,n_in,NT,NX)
         transported_terms = [w.clone()] #k = 0
         for orientation in [+1, -1]:
-            for mu in range(2):
+            for mu in range(self.dims):
                 w_transport = w.clone()
                 for k in range(1, self.kernel_size):
                     #transported terms

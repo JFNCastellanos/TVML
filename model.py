@@ -89,11 +89,18 @@ lcnn_layers = nn.Sequential(
                 
             ge.LConv( 32, 64,3),
             nn.PReLU(64,dtype=var.PREC,device=var.DEVICE),
-                
-            ge.LConv( 64, 128,3),
+
+            ge.LConv( 64,128,3),
+            nn.AdaptiveAvgPool2d((1, 1))
+)
+
+lcnn_linear_layer = nn.Sequential(
+       nn.Linear(128, 256,dtype=var.PREC), #We multiply by the number of output channels
+        nn.Dropout(p=0.3),
+        nn.BatchNorm1d(256,dtype=var.PREC),
+        nn.PReLU(256,dtype=var.PREC),
     
-            ge.LConv( 128, 4*var.NV_PRED,3),
-            nn.PReLU(4*var.NV_PRED,dtype=var.PREC,device=var.DEVICE)
+        nn.Linear(256, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
 )
 
 class TvGenerator(nn.Module):
@@ -108,6 +115,7 @@ class TvGenerator(nn.Module):
             self.linear_layers = linear_layers
         else:
             self.lcnn_layers = lcnn_layers
+            self.lcnn_linear_layer = lcnn_linear_layer
         self.batch_size = batch_size
     def forward(self, input):
         if var.GAUGE_EQ == False:
@@ -117,4 +125,5 @@ class TvGenerator(nn.Module):
         else:  
             x = self.lcnn_layers(input)
             x = x.squeeze() #We remove the trivial dimensions
+            x = self.lcnn_linear_layer(x)
         return x.view(self.batch_size,var.NV_PRED,4,var.NT,var.NX)
