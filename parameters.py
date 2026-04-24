@@ -22,7 +22,7 @@ def init():
     N = 2*NX*NT  #Number of degrees of freedom on the fine grid
     NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
-    TRAIN_PROP = 0.8 #Proportion of total examples used for training
+    TRAIN_PROP = 0.1 #Proportion of total examples used for training
     TRAIN_LEN = int(NO_CONFS*TRAIN_PROP)
     TEST_LEN = NO_CONFS - TRAIN_LEN 
     PRECISION = "double"

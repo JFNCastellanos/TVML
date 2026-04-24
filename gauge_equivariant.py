@@ -38,6 +38,10 @@ class LConv(nn.Module):
         #W = [Re(U01),Im(U01), ...] 
         #I could include more locally transforming quantities in the future
         #w.shape = (Batch,n_in,NT,NX)
+        #u.shape = (Batch,4,NT,NX)
+        
+        #Reshape u into a complex tensor ...
+        
         transported_terms = [w.clone()] #k = 0
         for orientation in [+1, -1]:
             for mu in range(self.dims):
