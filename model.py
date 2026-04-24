@@ -58,20 +58,18 @@ conv_layers_v2 = nn.Sequential(
             #size 12 x (NT+1) x (NX+1)  
             nn.CircularPad2d(1), 
             #size 12 x (NT+3) x (NX+3)  
-            nn.Conv2d(32, 64, 2, 1, 0,dtype=var.PREC),
-            nn.BatchNorm2d(64,dtype=var.PREC),
-            nn.PReLU(64,dtype=var.PREC),
+            nn.Conv2d(32, 24, 2, 1, 0,dtype=var.PREC),
+            nn.BatchNorm2d(24,dtype=var.PREC),
+            nn.PReLU(24,dtype=var.PREC),
             #size 24 x (NT+2) x (NX+2)    
+
             nn.AdaptiveAvgPool2d((1, 1))
             #size 24 x 1 x 1  
 )
 linear_layers_v2 = nn.Sequential(
             #state size 24
-            nn.Linear(64, 128,dtype=var.PREC), #We multiply by the number of output channels
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm1d(128,dtype=var.PREC),
-            nn.PReLU(128,dtype=var.PREC),
-            nn.Linear(128, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
+            nn.PReLU(24,dtype=var.PREC),
+            nn.Linear(24, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
@@ -111,8 +109,8 @@ class TvGenerator(nn.Module):
         super(TvGenerator, self).__init__()
         self.ngpu = ngpu
         if var.GAUGE_EQ == False:
-            self.conv_layers = conv_layers
-            self.linear_layers = linear_layers
+            self.conv_layers = conv_layers_v2
+            self.linear_layers = linear_layers_v2
         else:
             self.lcnn_layers = lcnn_layers
             self.lcnn_linear_layer = lcnn_linear_layer

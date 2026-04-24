@@ -49,7 +49,7 @@ class LConv(nn.Module):
                 for k in range(1, self.kernel_size):
                     #transported terms
                     #Compute W_j(x - orientation * k mu) (the sign depends on the orientation)
-                    w_transport = torch.roll(w,shifts=k*orientation,dims=2+mu)  
+                    w_transport = torch.roll(w,shifts=k*orientation,dims=2+mu)  #Roll automatically considers periodic boundaries
                     transported_terms.append(w_transport)
 
         # combine terms into a single tensor (along dim = 1 because of the batches)
