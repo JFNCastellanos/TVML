@@ -22,7 +22,7 @@ def init():
     N = 2*NX*NT  #Number of degrees of freedom on the fine grid
     NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
-    TRAIN_PROP = 0.1 #Proportion of total examples used for training
+    TRAIN_PROP = 0.8 #Proportion of total examples used for training
     TRAIN_LEN = int(NO_CONFS*TRAIN_PROP)
     TEST_LEN = NO_CONFS - TRAIN_LEN 
     PRECISION = "double"
@@ -34,7 +34,7 @@ def init():
         PREC_COMPLEX = torch.complex128
     else:
         print("Give a valid floating point precision")
-    GAUGE_EQ=False
+    GAUGE_EQ=True
     
 def print_parameters():
     print("*********** Configuration parameters ***********")
@@ -52,3 +52,16 @@ def print_parameters():
     print("* DOF on coarse grid: {0}".format(NV_PRED*BLOCKS_X*BLOCKS_T*2))
     print("* Training gauge equivariant model: {0}".format(GAUGE_EQ))
     print("************************************************")
+
+
+#For handling layers with more than one input 
+class MultiInputSequential(torch.nn.Module):
+    def __init__(self, *layers):
+        super().__init__()
+        for i, layer in enumerate(layers):
+            self.add_module(str(i), layer)
+    
+    def forward(self, *inputs):
+        for module in self.children():
+            inputs = module(*inputs)
+        return inputs

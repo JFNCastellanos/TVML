@@ -75,30 +75,15 @@ linear_layers_v2 = nn.Sequential(
 
 
 #gauge equivariant convolutional layers
-lcnn_layers = nn.Sequential(
-            ge.LConv( 2, 8,3),
-            nn.PReLU(8,dtype=var.PREC,device=var.DEVICE),
-                
+lcnn_layers = var.MultiInputSequential(
+            ge.LConv( 1, 8,3),             
             ge.LConv( 8, 16,3),
-            nn.PReLU(16,dtype=var.PREC,device=var.DEVICE),
-                
-            ge.LConv( 16, 32,3),
-            nn.PReLU(32,dtype=var.PREC,device=var.DEVICE),
-                
-            ge.LConv( 32, 64,3),
-            nn.PReLU(64,dtype=var.PREC,device=var.DEVICE),
-
-            ge.LConv( 64,128,3),
-            nn.AdaptiveAvgPool2d((1, 1))
+            ge.LConv( 16,2*var.NV_PRED ,3),
+           # nn.AdaptiveAvgPool2d((1, 1))
 )
 
 lcnn_linear_layer = nn.Sequential(
-       nn.Linear(128, 256,dtype=var.PREC), #We multiply by the number of output channels
-        nn.Dropout(p=0.3),
-        nn.BatchNorm1d(256,dtype=var.PREC),
-        nn.PReLU(256,dtype=var.PREC),
-    
-        nn.Linear(256, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
+       
 )
 
 class TvGenerator(nn.Module):
@@ -113,15 +98,17 @@ class TvGenerator(nn.Module):
             self.linear_layers = linear_layers_v2
         else:
             self.lcnn_layers = lcnn_layers
-            self.lcnn_linear_layer = lcnn_linear_layer
+            #self.lcnn_linear_layer = lcnn_linear_layer
         self.batch_size = batch_size
-    def forward(self, input):
+    def forward(self, u,w):
         if var.GAUGE_EQ == False:
             x = self.conv_layers(input)
             x = x.squeeze() #We remove the trivial dimensions
             x = self.linear_layers(x)
+            return x.view(self.batch_size,var.NV_PRED,4,var.NT,var.NX)
         else:  
-            x = self.lcnn_layers(input)
-            x = x.squeeze() #We remove the trivial dimensions
-            x = self.lcnn_linear_layer(x)
-        return x.view(self.batch_size,var.NV_PRED,4,var.NT,var.NX)
+            u,w = self.lcnn_layers(u,w)
+            w = w.squeeze() #We remove the trivial dimensions
+            #x = self.lcnn_linear_layer(x)
+            return w.view(self.batch_size,var.NV_PRED,2,var.NT,var.NX)
+        
