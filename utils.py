@@ -58,20 +58,39 @@ def SavePredictions(dataloader, model, device):
     One file per test vector. The data layout is the same as for
     the near-kernel vectors used for the training.
     x, t, μ, Re(Uμ), Im(Uμ)
-    """
+    """       
     with torch.no_grad():
         for batch_id, batch in enumerate(dataloader):
             data_batch = batch[0].to(device)          # (B, …)
-            pred = model(data_batch)                  # (B, 4*NV, NT, NX)
             confsID = batch[2]
+            if var.GAUGE_EQ == False:
+                pred = model(data_batch)                  # (B, 4*NV, NT, NX)
+                B = pred.shape[0]
+                pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
+    
+                # Build complex tensor (B,NV,2,NT,NX)
+                real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
+                imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)   # (B,NV,2,NT,NX)
+                pred_complex = torch.complex(real, imag)
+            else:
+                local_trans_obj = data_batch.shape[1]-4
+                local_t_object = data_batch[:,4:]
+        
+                # Build a complex tensor of shape (B,  2, NT, NX)
+                real = torch.stack([data_batch[:,0], data_batch[:,1]], dim=1)   # (B,2,NT,NX) (real number)
+                imag = torch.stack([data_batch[:,2], data_batch[:,3]], dim=1)   # (B,2,NT,NX) (real number)
+                u = torch.complex(real, imag)                  # (B,2,NT,NX) (complex number)
+                if local_trans_obj == 2:
+                    real = local_t_object[:,0].unsqueeze(1)          #(B,1,NT,NX)
+                    imag = local_t_object[:,1].unsqueeze(1)          #(B,1,NT,NX)
+                #else:
+                    #We have to stack them. I leave the line just in case I add more things, like Polyakov loops.
+                w = torch.complex(real,imag)
+                pred_complex = model(u,w)       #pred is already a complex number
+                B = pred_complex.shape[0]                                        #Batch size
+                pred_complex = pred_complex.view(B, var.NV_PRED, 2, var.NT, var.NX)      # (B,NV,0,NT,NX)
 
-            B = pred.shape[0]
-            pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
-
-            # Build complex tensor (B,NV,2,NT,NX)
-            real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
-            imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)   # (B,NV,2,NT,NX)
-            pred_complex = torch.complex(real, imag)
+            
             norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV_PRED, 1, 1, 1)
             norms_broadcastable = norms.view(B, var.NV_PRED, 1, 1, 1)
             pred_complex_normalized = pred_complex / norms_broadcastable
