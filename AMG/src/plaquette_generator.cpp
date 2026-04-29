@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     GConf.initialize(); //Initialize a random gauge configuration
         
     double beta = 2;
-    int number_of_confs = 100;
+    int number_of_confs = 400;
     
     std::cout << "Computing and storing the plaquettes... " << std::endl;
     for(int nconf = 0; nconf<number_of_confs; nconf++){    

@@ -79,4 +79,34 @@ def transporter(u,orientation,mu,k):
         for i in range(1,k+1):
             p_transporter *= torch.roll(u_mu.conj(),shifts=i*orientation,dims=1+mu)
     return p_transporter.unsqueeze(1)    
+
+
+class Linear(nn.Module):
+    """
+    A lattice gauge invariant linear layer convolution
+    f_i(U,W) = Sum_{j,} Omega_{i,j} W_j(x)
+    
+    n_in and n_out should consider that w is a complex tensors
+
+    """
+    def __init__(self, n_in, n_out):
+        super(Linear, self).__init__()
+        self.n_in = n_in
+        self.n_out = n_out
+        self.dims = 2 #We hardcode two dimensions for the Schwinger model
+        #Initialize weights Omega_{i,j,mu,k} (j,mu,k) are the in features, (i) is the out feature 
+        w_in_size  = self.n_in 
+        w_out_size = self.n_out
+
+        std = 1.0
+        real = torch.empty(w_out_size, w_in_size, dtype=var.PREC, device=var.DEVICE)
+        imag = torch.empty(w_out_size, w_in_size, dtype=var.PREC, device=var.DEVICE)
+        nn.init.normal_(real, mean=0.0, std=std)
+        nn.init.normal_(imag, mean=0.0, std=std)
+        self.weight = nn.Parameter(torch.complex(real, imag))
+        
+    # f_i(W) = w_{ij} W_{j}(t,x)
+    def forward(self, w):
+        w = torch.einsum('ij, bjxt -> bixt', self.weight, w)
+        return w
         
