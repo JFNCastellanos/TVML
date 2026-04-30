@@ -29,7 +29,7 @@ int main() {
     int SAP_test_vec_iter = 4;
     AMGV::SAP_test_vectors_iterations = SAP_test_vec_iter;
     //-0.1023;//-0.0933;//-0.18840579710144945; //0.0709
-    double m0 = -0.18840579710144945; 
+    double m0 = -0.1868;//-0.18840579710144945; 
     double beta = 2;
     mass::m0 = m0;
     beta::beta = beta;
@@ -51,11 +51,11 @@ int main() {
     std::ostringstream confsIDfile;
     if (mlearning::set == 0){
         std::cout << "Analyzing training set tv" << std::endl;
-        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-018/train/confFiles.txt";
+        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-1868/train/confFiles.txt";
     }
     else if (mlearning::set == 1){
         std::cout << "Analyzing testing set tv" << std::endl;
-        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-018/test/confFiles.txt";
+        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-1868/test/confFiles.txt";
     }
     else{ 
         std::cout << "Introduce a valid number for the set of configurations (train or test)" << std::endl;
@@ -77,7 +77,7 @@ int main() {
         std::ostringstream gauge_conf_file;
         gauge_conf_file << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b"
         << beta << "_" << LV::Nx << "x" << LV::Nt 
-		    << "/m-018/"
+		    << "/m-1868/"
             <<
             "2D_U1_Ns"<< LV::Nx <<"_Nt" << LV::Nt << "_b" 
             << format(beta::beta).c_str() << "_m" 

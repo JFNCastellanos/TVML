@@ -14,13 +14,13 @@ int main() {
     Coordinates(); //Builds array with coordinates of the lattice points x * Nt + t
     boundary(); //Builds LeftPB and RightPB (periodic boundary for U_mu(n))
     
-    mass::m0 = -0.18840579710144945; //Globally declared
+    mass::m0 = -0.1868;//-0.18840579710144945; //Globally declared
     GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
     GConf.initialize(); //Initialize a random gauge configuration
 
     double beta = 2;
     int Nv = 30;    //Number of test vectors to be generated
-    int number_of_confs = 400; //Number of confs to consider.
+    int number_of_confs = 1000; //Number of confs to consider.
     int sap_iterations = 4; //Number of smoothing iterations
     
     std::cout << "Generating Nv=" << Nv << " test vectors for " << number_of_confs << " gauge conf" << std::endl;
@@ -34,7 +34,7 @@ int main() {
         {
             std::ostringstream NameData;
             NameData << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b" <<
-            beta << "_" << LV::Nx << "x" << LV::Nt << "/m-018/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << 
+            beta << "_" << LV::Nx << "x" << LV::Nt << "/m-1868/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << 
             format(beta).c_str() << "_m" << format(mass::m0).c_str() << "_" << nconf << ".ctxt";
             GConf.readBinary(NameData.str());
         }

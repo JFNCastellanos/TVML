@@ -8,12 +8,12 @@ def init():
     """
     global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP, PRECISION, PREC, PREC_COMPLEX
     global TRAIN_LEN, TEST_LEN, NV_PRED
-    global GAUGE_EQ
-    BETA, NX, NT= 2, 32, 32
+    global GAUGE_EQ, LOAD, SAVE_W, VERSION
+    BETA, NX, NT= 2, 64, 64
     M0 = -0.18840579710144945 
     M0_STRING = utils.formatt(M0) #format string
-    NO_CONFS = 1000 #number of confs to load
-    M0_FOLDER = "m-018" #folder with confs
+    NO_CONFS = 400 #number of confs to load
+    M0_FOLDER = "m-018"#"m-018" #folder with confs
     BLOCKS_X, BLOCKS_T = 2, 2 #Change to 8, 8
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
@@ -26,6 +26,12 @@ def init():
     TRAIN_LEN = int(NO_CONFS*TRAIN_PROP)
     TEST_LEN = NO_CONFS - TRAIN_LEN 
     PRECISION = "double"
+    LOAD = True
+    VERSION = 1 #0 -> assemble P with SAP vectors, 1 -> assemble P with learned vectors
+    if LOAD == True:
+        SAVE_W = False
+    else:
+        SAVE_W = True
     if PRECISION == "single":
         PREC = torch.float32
         PREC_COMPLEX = torch.complex64
@@ -50,7 +56,9 @@ def print_parameters():
     print("* Precision: {0}".format(PRECISION))
     print("* DOF on fine grid: {0}".format(N))
     print("* DOF on coarse grid: {0}".format(NV_PRED*BLOCKS_X*BLOCKS_T*2))
-    print("* Training gauge equivariant model: {0}".format(GAUGE_EQ))
+    print("* Gauge equivariant model: {0}".format(GAUGE_EQ))
+    if LOAD == True:
+        print("* We load training parameters previously saved")
     print("************************************************")
 
 

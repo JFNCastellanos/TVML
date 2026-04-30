@@ -447,12 +447,12 @@ void Level::readTv(){
         std::ostringstream tv_file;
 		if (mlearning::set == 0){
 			tv_file << "../../fake_tv/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
-			<< "/m-018/train/conf" 
+			<< "/m-1868/train/conf" 
 			<< mlearning::confID << "_fake_tv" << tvID << ".tv";
 		}
 		else{
 			tv_file << "../../fake_tv/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
-			<< "/m-018/test/conf" 
+			<< "/m-1868/test/conf" 
 			<< mlearning::confID << "_fake_tv" << tvID << ".tv";
 		}
 
