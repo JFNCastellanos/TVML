@@ -6,6 +6,7 @@ project(Multigrid VERSION 1.0)
 #Source files
 set(SRC_FILES 
     src/variables.cpp           #Relevant parameters for the method
+    src/app_config.cpp
     src/gauge_conf.cpp          #Gauge configuration class
     src/dirac_operator.cpp      #Implementation of the Dirac operator
     src/bi_cgstab.cpp           #Bi-CGStab solver for comparison
@@ -47,6 +48,7 @@ target_compile_options("AMG_${NS}x${NT}_l${LEVELS}" PRIVATE
 set(SOURCES_TV
     src/variables.cpp           #Relevant parameters for the method
     src/gauge_conf.cpp          #Gauge configuration class
+    src/app_config.cpp
     src/dirac_operator.cpp      #Implementation of the Dirac operator
     src/bi_cgstab.cpp           #Bi-CGStab solver for comparison
     src/conjugate_gradient.cpp  #Conjugate gradient for solving normal equations
@@ -72,6 +74,7 @@ target_compile_options("tv_gen_${NS}x${NT}" PRIVATE
 set(SOURCES_PLAQ
     src/variables.cpp           #Relevant parameters for the method
     src/gauge_conf.cpp          #Gauge configuration class
+    src/app_config.cpp
     src/dirac_operator.cpp      #Implementation of the Dirac operator
     src/bi_cgstab.cpp           #Bi-CGStab solver for comparison
     src/conjugate_gradient.cpp  #Conjugate gradient for solving normal equations

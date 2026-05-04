@@ -9,28 +9,33 @@
 #include "dirac_operator.h"
 #include "gauge_conf.h"
 #include "utils.h"
+#include "app_config.h"
 
 
 int main(int argc, char **argv) {
+    const std::string configFile = (argc > 1) ? argv[1] : locateConfigFile("config.txt");
+    AppConfig appConfig = readAppConfig(configFile);
 
     srand(time(0));    
     readParameters("../parameters.dat");
     Coordinates(); //Builds array with coordinates of the lattice points x * Nt + t
     boundary(); //Builds LeftPB and RightPB (periodic boundary for U_mu(n))
     
-    mass::m0 = -0.1868;//-0.18840579710144945; //Globally declared
+    mass::m0 = appConfig.m0; //Globally declared
     GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
     GConf.initialize(); //Initialize a random gauge configuration
         
-    double beta = 2;
-    int number_of_confs = 1000;
+    double beta = appConfig.beta;
+    int number_of_confs = appConfig.number_of_confs;
+    std::string conf_dir = appConfig.gauge_conf_dir;
+    std::string m_dir = appConfig.m_dir;
     
-    std::cout << "Computing and storing the plaquettes... " << std::endl;
+    std::cout << "Computing and storing the plaquettes for beta=" << beta << " m0=" << appConfig.m0 << " and " << number_of_confs << " configs" << std::endl;
     for(int nconf = 0; nconf<number_of_confs; nconf++){    
         std::ostringstream NameData;
-        NameData << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b" <<
-        beta << "_" << LV::Nx << "x" << LV::Nt << "/m-1868/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << 
-        format(beta).c_str() << "_m" << format(mass::m0).c_str() << "_" << nconf << ".ctxt";
+        NameData << conf_dir << "/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/" << m_dir
+                 << "/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << format(beta).c_str()
+                 << "_m" << format(mass::m0).c_str() << "_" << nconf << ".ctxt";
         GConf.readBinary(NameData.str());
 
         GConf.Compute_Plaquette01();

@@ -1,4 +1,5 @@
 #include "level.h"
+#include "app_config.h"
 
 void Level::makeAggregates(){
     for (int x = 0; x < LevelV::BlocksX[level]; x++) {
@@ -442,19 +443,20 @@ void Level::orthonormalize(){
 }
 
 void Level::readTv(){
-	
-	for(int tvID = 0; tvID < LevelV::Ntest[level]; tvID++){
+    const AppConfig& config = getAppConfig();
+
+    for(int tvID = 0; tvID < LevelV::Ntest[level]; tvID++){
         std::ostringstream tv_file;
-		if (mlearning::set == 0){
-			tv_file << "../../fake_tv/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
-			<< "/m-1868/train/conf" 
-			<< mlearning::confID << "_fake_tv" << tvID << ".tv";
-		}
-		else{
-			tv_file << "../../fake_tv/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
-			<< "/m-1868/test/conf" 
-			<< mlearning::confID << "_fake_tv" << tvID << ".tv";
-		}
+        if (mlearning::set == 0){
+            tv_file << config.fake_tv_base_dir << "/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
+                    << "/" << config.m_dir << "/train/conf"
+                    << mlearning::confID << "_fake_tv" << tvID << ".tv";
+        }
+        else{
+            tv_file << config.fake_tv_base_dir << "/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
+                    << "/" << config.m_dir << "/test/conf"
+                    << mlearning::confID << "_fake_tv" << tvID << ".tv";
+        }
 
         readBinaryTv(tv_file.str(),interpolator_columns,tvID,level);
     }

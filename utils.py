@@ -1,5 +1,6 @@
 import numpy as np
 import parameters as var
+import torch
 
 def formatt(x):
     """
@@ -108,3 +109,104 @@ def SavePredictions(dataloader, model, device):
                                     Im = np.imag(value)
                                     data = struct.pack(fmt, int(x), int(t), int(mu), float(Re), float(Im))
                                     f.write(data)
+
+
+import json
+from datetime import datetime
+
+class MetadataSaver:
+    """Saves model metadata in a human-readable JSON format."""
+    
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        model_name: str,
+        epochs: int,
+        lr: float,
+        ratio: float,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        lamb: float = 0.0,
+        loss_train: float = None,
+        loss_test: float = None,
+        train_examples: int = None,
+    ):
+        self.model = model
+        self.model_name = model_name
+        self.epochs = epochs
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.lamb = lamb
+        self.loss_train = loss_train
+        self.loss_test = loss_test
+        self.ratio = ratio
+        self.train_examples = var.TRAIN_LEN
+        self.m0 = var.M0
+        self.BLOCKS_X = var.BLOCKS_X
+        self.BLOCKS_T = var.BLOCKS_T
+        self.NV = var.NV
+        self.NV_PRED = var.NV_PRED
+        self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    def _get_architecture(self) -> str:
+        """Extracts the model architecture as a readable string."""
+        return str(self.model)
+    
+    def _get_layer_summary(self) -> list:
+        """Returns a summary of each layer with parameters."""
+        summary = []
+        for name, module in self.model.named_modules():
+            if len(list(module.children())) == 0:  # Leaf modules only
+                params = sum(p.numel() for p in module.parameters())
+                if params > 0:
+                    summary.append({
+                        "layer": name,
+                        "type": module.__class__.__name__,
+                        "parameters": params
+                    })
+        return summary
+    
+    def to_dict(self) -> dict:
+        """Converts metadata to a dictionary."""
+        return {
+            "metadata": {
+                "model_name": self.model_name,
+                "training_date": self.timestamp,
+                "training_examples": self.train_examples,
+                "parameters_data_ratio":self.ratio,
+                "hyperparameters": {
+                    "epochs": self.epochs,
+                    "lr": self.lr,
+                    "beta1": self.beta1,
+                    "beta2": self.beta2,
+                    "lamb": self.lamb
+                },
+                "m0": self.m0,
+                "interpolator_parameters":{
+                    "BLOCKS_X": self.BLOCKS_X,
+                    "BLOCKS_T": self.BLOCKS_T,
+                    "NV_SAP": self.NV,
+                    "NV_PRED": self.NV_PRED
+                },
+                "final_losses": {
+                    "train": self.loss_train,
+                    "test": self.loss_test
+                }
+            },
+            "architecture": self._get_architecture(),
+            "layer_summary": self._get_layer_summary()
+        }
+    
+    def save(self, filepath: str = "metadata.json"):
+        """Saves metadata to a JSON file."""
+        with open(filepath, "w") as f:
+            json.dump(self.to_dict(), f, indent=4)
+        print(f"Metadata saved to '{filepath}'")
+    
+    @classmethod
+    def load(cls, filepath: str) -> dict:
+        """Loads metadata from a JSON file."""
+        with open(filepath, "r") as f:
+            return json.load(f)
+

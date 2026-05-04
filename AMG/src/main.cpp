@@ -10,12 +10,17 @@
 #include "boundary.h" //Build boundary conditions at every grid level
 #include "amg.h" //Algebraic Multigrid Method
 #include "tests.h" //Class for testing
+#include "app_config.h"
 
 #include <cstdint>
 #include <cstring>
 
 
-int main() {
+int main(int argc, char **argv) {
+    const std::string configFile = (argc > 1) ? argv[1] : locateConfigFile("config.txt");
+    AppConfig appConfig = readAppConfig(configFile);
+    globalAppConfig = appConfig;
+
     std::cout << "Nx " << LV::Nx << " Nt " << LV::Nt << std::endl;
     readParameters("../parameters.dat");
     srand(19);
@@ -28,11 +33,12 @@ int main() {
     AMGV::Nit = 0;
     int SAP_test_vec_iter = 4;
     AMGV::SAP_test_vectors_iterations = SAP_test_vec_iter;
-    //-0.1023;//-0.0933;//-0.18840579710144945; //0.0709
-    double m0 = -0.1868;//-0.18840579710144945; 
-    double beta = 2;
+    double m0 = appConfig.m0;
+    double beta = appConfig.beta;
     mass::m0 = m0;
     beta::beta = beta;
+    std::string conf_dir = appConfig.gauge_conf_dir;
+    std::string m_dir = appConfig.m_dir;
 
     int nconf;
     std::cout << "Train or test set (0 or 1) ";
@@ -48,22 +54,21 @@ int main() {
     printParameters();
 
     std::vector<int> confsID;
-    std::ostringstream confsIDfile;
+    std::string confsIDfile;
     if (mlearning::set == 0){
         std::cout << "Analyzing training set tv" << std::endl;
-        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-1868/train/confFiles.txt";
+        confsIDfile = appConfig.fake_tv_base_dir + "/b" + std::to_string((int) (beta)) + "_" + std::to_string(LV::Nx) + "x" + std::to_string(LV::Nt) + "/" + appConfig.m_dir + "/train/confFiles.txt";
     }
     else if (mlearning::set == 1){
         std::cout << "Analyzing testing set tv" << std::endl;
-        confsIDfile << "../../fake_tv/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/m-1868/test/confFiles.txt";
+        confsIDfile = appConfig.fake_tv_base_dir + "/b" + std::to_string((int) (beta)) + "_" + std::to_string(LV::Nx) + "x" + std::to_string(LV::Nt) + "/" + appConfig.m_dir + "/test/confFiles.txt";
     }
     else{ 
         std::cout << "Introduce a valid number for the set of configurations (train or test)" << std::endl;
         exit(1);
     }
 
-
-    readConfsID(confsID,confsIDfile.str());
+    readConfsID(confsID, confsIDfile);
     
     
     
@@ -75,15 +80,11 @@ int main() {
         
     
         std::ostringstream gauge_conf_file;
-        gauge_conf_file << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b"
-        << beta << "_" << LV::Nx << "x" << LV::Nt 
-		    << "/m-1868/"
-            <<
-            "2D_U1_Ns"<< LV::Nx <<"_Nt" << LV::Nt << "_b" 
-            << format(beta::beta).c_str() << "_m" 
-            << format(mass::m0).c_str() << "_" 
-            << mlearning::confID << ".ctxt";
-
+        gauge_conf_file << conf_dir << "/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/" << m_dir << "/"
+                        << "2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b"
+                        << format(beta::beta).c_str() << "_m"
+                        << format(mass::m0).c_str() << "_"
+                        << mlearning::confID << ".ctxt";
 
 
         GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);

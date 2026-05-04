@@ -111,5 +111,4 @@ class TvGenerator(nn.Module):
             u, w = self.lcnn_layers(u,w)
             #w = self.lcnn_linear_layer(w)
             w = w.squeeze() #We remove the trivial dimensions
-            return w.view(self.batch_size,var.NV_PRED,2,var.NT,var.NX)
-        
+            return w.view(self.batch_size,var.NV_PRED,2,var.NT,var.NX)        

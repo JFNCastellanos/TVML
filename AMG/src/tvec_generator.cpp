@@ -7,21 +7,27 @@
 #include "boundary.h"
 #include "gauge_conf.h"
 #include "sap.h"
+#include "app_config.h"
 
-int main() {
+int main(int argc, char **argv) {
+    const std::string configFile = (argc > 1) ? argv[1] : locateConfigFile("config.txt");
+    AppConfig appConfig = readAppConfig(configFile);
+
     srand(time(0));
     readParameters("../parameters.dat");
     Coordinates(); //Builds array with coordinates of the lattice points x * Nt + t
     boundary(); //Builds LeftPB and RightPB (periodic boundary for U_mu(n))
     
-    mass::m0 = -0.1868;//-0.18840579710144945; //Globally declared
+    mass::m0 = appConfig.m0; //Globally declared
     GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
     GConf.initialize(); //Initialize a random gauge configuration
 
-    double beta = 2;
-    int Nv = 30;    //Number of test vectors to be generated
-    int number_of_confs = 1000; //Number of confs to consider.
+    double beta = appConfig.beta;
+    int Nv = appConfig.Nv;    //Number of test vectors to be generated
+    int number_of_confs = appConfig.number_of_confs; //Number of confs to consider.
     int sap_iterations = 4; //Number of smoothing iterations
+    std::string conf_dir = appConfig.gauge_conf_dir;
+    std::string m_dir = appConfig.m_dir;
     
     std::cout << "Generating Nv=" << Nv << " test vectors for " << number_of_confs << " gauge conf" << std::endl;
     std::cout << "Test vectors are smoothed with " << sap_iterations << " SAP iterations" << std::endl;
@@ -33,9 +39,9 @@ int main() {
     
         {
             std::ostringstream NameData;
-            NameData << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b" <<
-            beta << "_" << LV::Nx << "x" << LV::Nt << "/m-1868/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << 
-            format(beta).c_str() << "_m" << format(mass::m0).c_str() << "_" << nconf << ".ctxt";
+            NameData << conf_dir << "/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/" << m_dir
+                     << "/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << format(beta).c_str()
+                     << "_m" << format(mass::m0).c_str() << "_" << nconf << ".ctxt";
             GConf.readBinary(NameData.str());
         }
 
