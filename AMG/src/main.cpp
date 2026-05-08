@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
 
     std::cout << "Nx " << LV::Nx << " Nt " << LV::Nt << std::endl;
     readParameters("../parameters.dat");
-    srand(19);
-    //srand(time(0));
+    //srand(19);
+    srand(time(0));
     
     Coordinates(); //Builds array with coordinates of the lattice points x * Nt + t
     boundary(); //Boundaries for every level
@@ -129,6 +129,7 @@ int main(int argc, char **argv) {
     
     }
 
+    std::cout << "beta " << beta << "  m0  " << m0 << std::endl;
     std::cout << "Mean iteration count for smoothed test vectors " << mean(smooth_tv_amg_iter) << " +- " << standard_deviation(smooth_tv_amg_iter) << std::endl;
     std::cout << "Mean iteration count for random test vectors   " << mean(random_tv_amg_iter) << " +- " << standard_deviation(random_tv_amg_iter) << std::endl;
     std::cout << "Mean iteration count for learned test vectors  " << mean(learned_tv_amg_iter) << " +- " << standard_deviation(learned_tv_amg_iter) << std::endl;

@@ -73,13 +73,16 @@ linear_layers_v2 = nn.Sequential(
 
 #gauge equivariant convolutional layers
 lcnn_layers = var.MultiInputSequential(
-            ge.LConv( 1, 2, 6),      
-            ge.LConv( 2, 4, 6),      
-            ge.LConv( 4, 8, 6),    
+            ge.LConv( 1, 4, 6),      
+            ge.LConv( 4, 8, 6),      
+            ge.LConv( 8, 16, 6),   
+            ge.LConv( 16, 32, 6),    
+            ge.LConv( 32, 16, 6),   
+            ge.LConv( 16, 8,6),
             ge.LConv( 8, 16,6),
-            ge.LConv( 16, 18,6),
-            ge.LConv( 18, 2*var.NV_PRED, 6),
+            ge.LConv( 16, 2*var.NV_PRED, 6),
 )
+
 
 lcnn_linear_layer = nn.Sequential(
          ge.Linear(64,128),
