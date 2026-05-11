@@ -4,49 +4,42 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include "params.h" //Read parameters for lattice blocks, test vectors and SAP blocks
+#include "boundary.h"
 #include "dirac_operator.h"
 #include "gauge_conf.h"
+#include "utils.h"
+#include "app_config.h"
 
-//Formats decimal numbers
-//For opening file with confs 
-static std::string format(const double& number) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(4) << number;
-    std::string str = oss.str();
-    str.erase(str.find('.'), 1); //Removes decimal dot 
-    return str;
-}
 
 int main(int argc, char **argv) {
+    const std::string configFile = (argc > 1) ? argv[1] : locateConfigFile("config.txt");
+    AppConfig appConfig = readAppConfig(configFile);
 
-    //srand(19);
     srand(time(0));    
+    readParameters("../parameters.dat");
     Coordinates(); //Builds array with coordinates of the lattice points x * Nt + t
-    periodic_boundary(); //Builds LeftPB and RightPB (periodic boundary for U_mu(n))
-    CheckBlocks(); //Check blocks dimensions
+    boundary(); //Builds LeftPB and RightPB (periodic boundary for U_mu(n))
     
-    m0 = -0.18840579710144945; //Globally declared
-
-    
+    mass::m0 = appConfig.m0; //Globally declared
     GaugeConf GConf = GaugeConf(LV::Nx, LV::Nt);
     GConf.initialize(); //Initialize a random gauge configuration
-
+        
+    double beta = appConfig.beta;
+    int number_of_confs = appConfig.number_of_confs;
+    std::string conf_dir = appConfig.gauge_conf_dir;
+    std::string m_dir = appConfig.m_dir;
     
-    double beta = 2;
-    int number_of_confs = 1000;
-    
-    std::cout << "Computing and storing the plaquettes... " << std::endl;
-    for(int nconf = 0; nconf<number_of_confs; nconf++){
-   
-    
+    std::cout << "Computing and storing the plaquettes for beta=" << beta << " m0=" << appConfig.m0 << " and " << number_of_confs << " configs" << std::endl;
+    for(int nconf = 0; nconf<number_of_confs; nconf++){    
         std::ostringstream NameData;
-        NameData << "/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs/b" <<
-        beta << "_" << LV::Nx << "x" << LV::Nt << "/m-018/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << 
-        format(beta).c_str() << "_m" << format(m0).c_str() << "_" << nconf << ".ctxt";
+        NameData << conf_dir << "/b" << beta << "_" << LV::Nx << "x" << LV::Nt << "/" << m_dir
+                 << "/2D_U1_Ns" << LV::Nx << "_Nt" << LV::Nt << "_b" << format(beta).c_str()
+                 << "_m" << format(mass::m0).c_str() << "_" << nconf << ".ctxt";
         GConf.readBinary(NameData.str());
 
         GConf.Compute_Plaquette01();
-        if (nconf == 0){
+        if (nconf < 20){
             c_vector Plaquette01 = GConf.getPlaq();
             std::cout << "U_01(0,0) " << Plaquette01[0] << std::endl;
             int nx = 0, nt = 1;
@@ -66,8 +59,8 @@ int main(int argc, char **argv) {
         
         std::ostringstream NamePlaq;
         NamePlaq << "plaquette_" << LV::Nx << "x" << LV::Nt << "_b" << 
-        format(beta).c_str() << "_m" << format(m0).c_str() << "_nconf" << nconf << ".plaq";
-        //GConf.savePlaquette(NamePlaq.str());
+        format(beta).c_str() << "_m" << format(mass::m0).c_str() << "_nconf" << nconf << ".plaq";
+        GConf.savePlaquette(NamePlaq.str());
     }
     std::cout << "Done " << std::endl;
 

@@ -29,20 +29,38 @@ def train(dataloader, model, optimizer,losses,version):
         # Load the data
         data_batch   = batch[0].to(var.DEVICE)             # shape (B, 6, NT, NX)  
         near_kernel   = batch[1].to(var.DEVICE)            # shape (B, NV, 2, NT, NX)
-
         # Predicted test vectors
         # model returns a real‑valued tensor of shape [B, 4*NV, NT, NX]
-        pred = model(data_batch)                   
-        # Reshape / convert to complex dtype (needed for operators)
-        # Example: real/imag in 4 channels (Re0, Re1, Im0, Im1)
-        B = pred.shape[0]                                        #Batch size
-        pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)      # (B,NV,4,NT,NX)
+        if var.GAUGE_EQ == False:
+            pred = model(data_batch)       
+            # Reshape / convert to complex dtype (needed for operators)
+            # Example: real/imag in 4 channels (Re0, Re1, Im0, Im1)
+            B = pred.shape[0]                                        #Batch size
+            pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)      # (B,NV,4,NT,NX)
+    
+            # Build a complex tensor of shape (B, NV, 2, NT, NX)
+            real = torch.stack([pred[:,:, 0], pred[:,:, 1]], dim=2)   # (B,NV,2,NT,NX) (real number)
+            imag = torch.stack([pred[:,:, 2], pred[:,:, 3]], dim=2)   # (B,NV,2,NT,NX) (real number)
+            pred_complex = torch.complex(real, imag)                  # (B,NV,2,NT,NX) (complex number)
+            #If real.dtype = float64 and imag.type = float64, then .complex is complex128
+        else:
+            local_trans_obj = data_batch.shape[1]-4
+            local_t_object = data_batch[:,4:]
 
-        # Build a complex tensor of shape (B, NV, 2, NT, NX)
-        real = torch.stack([pred[:,:, 0], pred[:,:, 1]], dim=2)   # (B,NV,2,NT,NX) (real number)
-        imag = torch.stack([pred[:,:, 2], pred[:,:, 3]], dim=2)   # (B,NV,2,NT,NX) (real number)
-        pred_complex = torch.complex(real, imag)                  # (B,NV,2,NT,NX) (complex number)
-        #If real.dtype = float64 and imag.type = float64, then .complex is complex128
+            # Build a complex tensor of shape (B,  2, NT, NX)
+            real = torch.stack([data_batch[:,0], data_batch[:,1]], dim=1)   # (B,2,NT,NX) (real number)
+            imag = torch.stack([data_batch[:,2], data_batch[:,3]], dim=1)   # (B,2,NT,NX) (real number)
+            u = torch.complex(real, imag)                  # (B,2,NT,NX) (complex number)
+            if local_trans_obj == 2:
+                real = local_t_object[:,0].unsqueeze(1)          #(B,1,NT,NX)
+                imag = local_t_object[:,1].unsqueeze(1)          #(B,1,NT,NX)
+            #else:
+                #We have to stack them. I leave the line just in case I add more things, like Polyakov loops.
+            w = torch.complex(real,imag)
+            pred_complex = model(u,w)       #pred is already a complex number
+            B = pred_complex.shape[0]                                        #Batch size
+            pred_complex = pred_complex.view(B, var.NV_PRED, 2, var.NT, var.NX)      # (B,NV,0,NT,NX)
+        
 
         if version == 0:
             #Normalizing the fake test vectors
@@ -120,15 +138,35 @@ def evaluate(dataloader, model, device, version,criterion=None):
 
            
             # Forward pass – exactly the same reshaping as in training
-            pred = model(data_batch)                  # (B, 4*NV, NT, NX)
-
-            B = pred.shape[0]    #Batch size
-            pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
-
-            # Build complex tensor (B,NV,2,NT,NX)
-            real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
-            imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)   # (B,NV,2,NT,NX)
-            pred_complex = torch.complex(real, imag)
+            if var.GAUGE_EQ == False:
+                pred = model(data_batch)       
+                # Reshape / convert to complex dtype (needed for operators)
+                # Example: real/imag in 4 channels (Re0, Re1, Im0, Im1)
+                B = pred.shape[0]                                        #Batch size
+                pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)      # (B,NV,4,NT,NX)
+        
+                # Build a complex tensor of shape (B, NV, 2, NT, NX)
+                real = torch.stack([pred[:,:, 0], pred[:,:, 1]], dim=2)   # (B,NV,2,NT,NX) (real number)
+                imag = torch.stack([pred[:,:, 2], pred[:,:, 3]], dim=2)   # (B,NV,2,NT,NX) (real number)
+                pred_complex = torch.complex(real, imag)                  # (B,NV,2,NT,NX) (complex number)
+                #If real.dtype = float64 and imag.type = float64, then .complex is complex128
+            else:
+                local_trans_obj = data_batch.shape[1]-4
+                local_t_object = data_batch[:,4:]
+    
+                # Build a complex tensor of shape (B,  2, NT, NX)
+                real = torch.stack([data_batch[:,0], data_batch[:,1]], dim=1)   # (B,2,NT,NX) (real number)
+                imag = torch.stack([data_batch[:,2], data_batch[:,3]], dim=1)   # (B,2,NT,NX) (real number)
+                u = torch.complex(real, imag)                  # (B,2,NT,NX) (complex number)
+                if local_trans_obj == 2:
+                    real = local_t_object[:,0].unsqueeze(1)          #(B,1,NT,NX)
+                    imag = local_t_object[:,1].unsqueeze(1)          #(B,1,NT,NX)
+                #else:
+                    #We have to stack them. I leave the line just in case I add more things, like Polyakov loops.
+                w = torch.complex(real,imag)
+                pred_complex = model(u,w)       #pred is already a complex number
+                B = pred_complex.shape[0]                                        #Batch size
+                pred_complex = pred_complex.view(B, var.NV_PRED, 2, var.NT, var.NX)      # (B,NV,0,NT,NX)
             if version == 0:
                 #Normalizing the fake test vectors
                 norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV_PRED, 1, 1, 1)

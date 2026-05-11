@@ -94,6 +94,4 @@ static std::string format(const double& number) {
     return str;
 }
 
-
-
 #endif

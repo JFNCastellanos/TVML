@@ -1,5 +1,6 @@
 import numpy as np
 import parameters as var
+import torch
 
 def formatt(x):
     """
@@ -58,20 +59,39 @@ def SavePredictions(dataloader, model, device):
     One file per test vector. The data layout is the same as for
     the near-kernel vectors used for the training.
     x, t, μ, Re(Uμ), Im(Uμ)
-    """
+    """       
     with torch.no_grad():
         for batch_id, batch in enumerate(dataloader):
             data_batch = batch[0].to(device)          # (B, …)
-            pred = model(data_batch)                  # (B, 4*NV, NT, NX)
             confsID = batch[2]
+            if var.GAUGE_EQ == False:
+                pred = model(data_batch)                  # (B, 4*NV, NT, NX)
+                B = pred.shape[0]
+                pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
+    
+                # Build complex tensor (B,NV,2,NT,NX)
+                real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
+                imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)   # (B,NV,2,NT,NX)
+                pred_complex = torch.complex(real, imag)
+            else:
+                local_trans_obj = data_batch.shape[1]-4
+                local_t_object = data_batch[:,4:]
+        
+                # Build a complex tensor of shape (B,  2, NT, NX)
+                real = torch.stack([data_batch[:,0], data_batch[:,1]], dim=1)   # (B,2,NT,NX) (real number)
+                imag = torch.stack([data_batch[:,2], data_batch[:,3]], dim=1)   # (B,2,NT,NX) (real number)
+                u = torch.complex(real, imag)                  # (B,2,NT,NX) (complex number)
+                if local_trans_obj == 2:
+                    real = local_t_object[:,0].unsqueeze(1)          #(B,1,NT,NX)
+                    imag = local_t_object[:,1].unsqueeze(1)          #(B,1,NT,NX)
+                #else:
+                    #We have to stack them. I leave the line just in case I add more things, like Polyakov loops.
+                w = torch.complex(real,imag)
+                pred_complex = model(u,w)       #pred is already a complex number
+                B = pred_complex.shape[0]                                        #Batch size
+                pred_complex = pred_complex.view(B, var.NV_PRED, 2, var.NT, var.NX)      # (B,NV,0,NT,NX)
 
-            B = pred.shape[0]
-            pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)   # (B,NV,4,NT,NX)
-
-            # Build complex tensor (B,NV,2,NT,NX)
-            real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)   # (B,NV,2,NT,NX)
-            imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)   # (B,NV,2,NT,NX)
-            pred_complex = torch.complex(real, imag)
+            
             norms = torch.linalg.vector_norm(pred_complex[:,:],dim=(-3,-2, -1)).view(B, var.NV_PRED, 1, 1, 1)
             norms_broadcastable = norms.view(B, var.NV_PRED, 1, 1, 1)
             pred_complex_normalized = pred_complex / norms_broadcastable
@@ -89,3 +109,104 @@ def SavePredictions(dataloader, model, device):
                                     Im = np.imag(value)
                                     data = struct.pack(fmt, int(x), int(t), int(mu), float(Re), float(Im))
                                     f.write(data)
+
+
+import json
+from datetime import datetime
+
+class MetadataSaver:
+    """Saves model metadata in a human-readable JSON format."""
+    
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        model_name: str,
+        epochs: int,
+        lr: float,
+        ratio: float,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
+        lamb: float = 0.0,
+        loss_train: float = None,
+        loss_test: float = None,
+        train_examples: int = None,
+    ):
+        self.model = model
+        self.model_name = model_name
+        self.epochs = epochs
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.lamb = lamb
+        self.loss_train = loss_train
+        self.loss_test = loss_test
+        self.ratio = ratio
+        self.train_examples = var.TRAIN_LEN
+        self.m0 = var.M0
+        self.BLOCKS_X = var.BLOCKS_X
+        self.BLOCKS_T = var.BLOCKS_T
+        self.NV = var.NV
+        self.NV_PRED = var.NV_PRED
+        self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    def _get_architecture(self) -> str:
+        """Extracts the model architecture as a readable string."""
+        return str(self.model)
+    
+    def _get_layer_summary(self) -> list:
+        """Returns a summary of each layer with parameters."""
+        summary = []
+        for name, module in self.model.named_modules():
+            if len(list(module.children())) == 0:  # Leaf modules only
+                params = sum(p.numel() for p in module.parameters())
+                if params > 0:
+                    summary.append({
+                        "layer": name,
+                        "type": module.__class__.__name__,
+                        "parameters": params
+                    })
+        return summary
+    
+    def to_dict(self) -> dict:
+        """Converts metadata to a dictionary."""
+        return {
+            "metadata": {
+                "model_name": self.model_name,
+                "training_date": self.timestamp,
+                "training_examples": self.train_examples,
+                "parameters_data_ratio":self.ratio,
+                "hyperparameters": {
+                    "epochs": self.epochs,
+                    "lr": self.lr,
+                    "beta1": self.beta1,
+                    "beta2": self.beta2,
+                    "lamb": self.lamb
+                },
+                "m0": self.m0,
+                "interpolator_parameters":{
+                    "BLOCKS_X": self.BLOCKS_X,
+                    "BLOCKS_T": self.BLOCKS_T,
+                    "NV_SAP": self.NV,
+                    "NV_PRED": self.NV_PRED
+                },
+                "final_losses": {
+                    "train": self.loss_train,
+                    "test": self.loss_test
+                }
+            },
+            "architecture": self._get_architecture(),
+            "layer_summary": self._get_layer_summary()
+        }
+    
+    def save(self, filepath: str = "metadata.json"):
+        """Saves metadata to a JSON file."""
+        with open(filepath, "w") as f:
+            json.dump(self.to_dict(), f, indent=4)
+        print(f"Metadata saved to '{filepath}'")
+    
+    @classmethod
+    def load(cls, filepath: str) -> dict:
+        """Loads metadata from a JSON file."""
+        with open(filepath, "r") as f:
+            return json.load(f)
+

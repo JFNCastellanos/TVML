@@ -25,13 +25,13 @@ class TestLoss():
             pin_memory=True
         )
 
-        #----returns a tensor of size [ [batch_size,4,Nt,Nx], [batch_size,Nv,2,Nt,Nx], [batch_size]]----#
-        #gauge_conf = [Re(U0),Re(U1),Im(U0),Im(U1)]
+        #----returns a tensor of size [ [batch_size,6,Nt,Nx], [batch_size,Nv,2,Nt,Nx], [batch_size]]----#
+        #gauge_conf = [Re(U0),Re(U1),Im(U0),Im(U1),Re(U01),Im(U01)]
         #    gconf is float64 and tvectors complex128. The last entry has the indices of the confs.
         self.first_batch = next(iter(dataloader)) 
         #--------------------------------------
         self.vectors = self.first_batch[1].to(var.DEVICE)
-
+        assert 2*var.NV*var.BLOCKS_X*var.BLOCKS_T < var.N, "Test will fail because you have more degrees of freedom on the coarse level than on the fine grid. Either reduce the number of lattice blocks or test vectors."
     
     def torch_loss_ind(self,pred, target):
         """
@@ -42,7 +42,6 @@ class TestLoss():
         return loss
     
     def testTrivialCase(self):
-        vectors = self.first_batch[1].to(var.DEVICE)
         loss = self.criterion(self.vectors,self.vectors) 
         assert torch.abs(loss) < 1e-5, "When the interpolator is assembled with tv and is evaluated on tv, the loss should be zero, instead it is {0}".format(loss)
         print("Trivial case succesful")
@@ -70,7 +69,7 @@ class TestLoss():
         for confID in range(self.batch_size):
             #print("confID",confID)
             for i in range(remTV):
-                path = '/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(
+                path = '/wsgjsc/home/nietocastellanos1/Documents/TVML/real_tv/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(
                 int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,29-i)
                 tvector = torch.tensor(read_binary_conf(None,path)).to(device=var.DEVICE,dtype=var.PREC_COMPLEX)
                 #print("Test vector ",29-i)

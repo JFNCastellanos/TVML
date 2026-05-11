@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import parameters as var
+import gauge_equivariant as ge
+var.init()
 
 #torch.nn.Conv2d(in_channels, out_channels, kernel_size,
 #stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros', 
@@ -9,138 +11,20 @@ import parameters as var
 #padding=0, output_padding=0, groups=1, bias=True, dilation=1, padding_mode='zeros', 
 #device=None, dtype=None)
 
-neural_net = nn.Sequential(
-            #Conv2D(in_chan,out_chan,kernel,stride,padding)
-            #state size 4 x NT x NX
-            nn.Conv2d(4, 128, 2, 2, 0,dtype=var.PREC),
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm2d(128),
-            nn.PReLU(128),
-            #state size 128 x NT/2 x NX/2
-            nn.Conv2d(128, 64, 2, 2, 0,dtype=var.PREC),
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm2d(64),
-            nn.PReLU(64),
-            #state size 64 x NT/4 x NX/4
-            nn.Conv2d(64, 32, 2, 2, 0,dtype=var.PREC),
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm2d(32),
-            nn.PReLU(32),
-            #state size 32 x NT/8 x NX/8
-            nn.ConvTranspose2d(32, 64, 2, 2, 0,dtype=var.PREC),
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm2d(64),
-            nn.PReLU(64),
-            # state size 64 x NT/4 x NX/4
-            nn.ConvTranspose2d(64, 64, 2, 2, 0,dtype=var.PREC),
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm2d(64),
-            nn.PReLU(64),
-            # state size 64 x NT/2 x NX/2
-            nn.ConvTranspose2d(64, 4*var.NV, 2, 2, 0,dtype=var.PREC),
-            nn.Hardtanh(min_val=-2.0, max_val=2.0)
-            # state size. 4*Nv x NT x NX, (real, imaginary part and two spin components)
-)
-
-neural_net2 = nn.Sequential(
-            #Conv2D(in_chan,out_chan,kernel,stride,padding)
-            #state size 4 x NT x NX
-            nn.Conv2d(4, 128, 2, 2, 0),
-            nn.BatchNorm2d(128),
-            nn.PReLU(128),
-            #state size 128 x NT/2 x NX/2
-            nn.Conv2d(128, 64, 2, 2, 0),
-            nn.BatchNorm2d(64),
-            nn.PReLU(64),
-            #state size 64 x NT/4 x NX/4
-            nn.ConvTranspose2d(64, 64, 2, 2, 0),
-            nn.BatchNorm2d(64),
-            nn.PReLU(64),
-            # state size 64 x NT/2 x NX/2
-            nn.ConvTranspose2d(64, 4*var.NV, 2, 2, 0),
-            #nn.Hardtanh(min_val=-1.0, max_val=1.0)
-            #nn.Tanh()
-            # state size. 4*Nv x NT x NX, (real, imaginary part and two spin components)
-            #print(Re(Psi_0),Re(Psi_1),Im(Psi_0),Im(Psi_1)). 
-
-            #TODO:
-            #Create a layer to normalize the output without changing its shape
-
-    #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
-)
-
-neural_net3 = nn.Sequential(
-            #Conv2D(in_chan,out_chan,kernel,stride,padding)
-            #state size 4 x NT x NX
-            nn.Conv2d(4, 64, 2, 2, 0),
-            nn.BatchNorm2d(64),
-            nn.PReLU(64),
-            #state size 128 x NT/2 x NX/2
-            nn.Conv2d(64, 128, 2, 2, 0),
-            nn.BatchNorm2d(128),
-            nn.PReLU(128),
-            #state size 64 x NT/4 x NX/4
-            nn.Flatten(), #We flatten the output after the convolution
-    
-            nn.Linear(128 * var.NT//4 * var.NX//4, 256), #We multiply by the number of output channels
-            nn.Dropout(p=0.1),
-            nn.BatchNorm1d(256),
-            nn.PReLU(256),
-
-            nn.Linear(256, 512),
-            nn.Dropout(p=0.1),
-            nn.BatchNorm1d(512),
-            nn.PReLU(512),
-
-            nn.Linear(512, 512),
-            nn.Dropout(p=0.1),
-            nn.BatchNorm1d(512),
-            nn.PReLU(512),
-
-            nn.Linear(512, 512),
-            nn.Dropout(p=0.1),
-            nn.BatchNorm1d(512),
-            nn.PReLU(512),
-
-            nn.Linear(512, 256),
-            nn.Dropout(p=0.1),
-            nn.BatchNorm1d(256),
-            nn.PReLU(256),
-
-            nn.Linear(256, 128),
-            nn.Dropout(p=0.1),
-            nn.BatchNorm1d(128),
-            nn.PReLU(128),
-
-            nn.Linear(128, 64), 
-            nn.Dropout(p=0.1),
-            nn.BatchNorm1d(64),
-            nn.PReLU(64),
-            #nn.Hardtanh(min_val=-0.5, max_val=0.5),
-    
-
-            nn.Linear(64, 4*var.NV*var.NT*var.NX),
-            #nn.Hardtanh(min_val=-1.0, max_val=1.0),
-            #nn.PReLU(4*var.NV*var.NT*var.NX),
-
-            
-    #The state is later reshaped into (B,NV,4,NT,NX) (real) and then (B,NV,2,NT,NX) (complex)
-)
-
 conv_layers = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
             #size 6 x NT x NX
             nn.CircularPad2d(1), #We pad to include periodic boundaries
             #size 6 x (NT+2) x (NX+2)    
-            nn.Conv2d(6, 64, 2, 1, 0,dtype=var.PREC),
-            nn.BatchNorm2d(64,dtype=var.PREC),
-            nn.PReLU(64,dtype=var.PREC),
+            nn.Conv2d(6, 8, 2, 1, 0,dtype=var.PREC),
+            nn.BatchNorm2d(8,dtype=var.PREC),
+            nn.PReLU(8,dtype=var.PREC),
             #size 12 x (NT+1) x (NX+1)  
             nn.CircularPad2d(1), 
             #size 12 x (NT+3) x (NX+3)  
-            nn.Conv2d(64, 128, 2, 1, 0,dtype=var.PREC),
-            nn.BatchNorm2d(128,dtype=var.PREC),
-            nn.PReLU(128,dtype=var.PREC),
+            nn.Conv2d(8, 16, 2, 1, 0,dtype=var.PREC),
+            nn.BatchNorm2d(16,dtype=var.PREC),
+            nn.PReLU(16,dtype=var.PREC),
             #size 24 x (NT+2) x (NX+2)  
             #nn.CircularPad2d(1), 
             #size 12 x (NT+4) x (NX+4)  
@@ -150,20 +34,60 @@ conv_layers = nn.Sequential(
 )
 linear_layers = nn.Sequential(
             #state size 24
-            nn.Linear(128, 256,dtype=var.PREC), #We multiply by the number of output channels
+            nn.Linear(16, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC), #We multiply by the number of output channels
+
+            #nn.Linear(256, 512,dtype=var.PREC), #We multiply by the number of output channels
             #nn.Dropout(p=0.1),
-            nn.BatchNorm1d(256,dtype=var.PREC),
-            nn.PReLU(256,dtype=var.PREC),
-    
-            nn.Linear(256, 512,dtype=var.PREC), #We multiply by the number of output channels
-            #nn.Dropout(p=0.1),
-            nn.BatchNorm1d(512,dtype=var.PREC),
-            nn.PReLU(512,dtype=var.PREC),
-            nn.Linear(512, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
+            #nn.BatchNorm1d(512,dtype=var.PREC),
+            #nn.PReLU(512,dtype=var.PREC),
+            #nn.Linear(256, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
+    #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
+)
+
+conv_layers_v2 = nn.Sequential(
+            #Conv2D(in_chan,out_chan,kernel,stride,padding)
+            #size 6 x NT x NX
+            nn.CircularPad2d(1), #We pad to include periodic boundaries
+            #size 6 x (NT+2) x (NX+2)    
+            nn.Conv2d(6, 32, 2, 1, 0,dtype=var.PREC),
+            nn.BatchNorm2d(32,dtype=var.PREC),
+            nn.PReLU(32,dtype=var.PREC),
+            #size 12 x (NT+1) x (NX+1)  
+            nn.CircularPad2d(1), 
+            #size 12 x (NT+3) x (NX+3)  
+            nn.Conv2d(32, 24, 2, 1, 0,dtype=var.PREC),
+            nn.BatchNorm2d(24,dtype=var.PREC),
+            nn.PReLU(24,dtype=var.PREC),
+            #size 24 x (NT+2) x (NX+2)    
+
+            
+            #size 24 x 1 x 1  
+)
+linear_layers_v2 = nn.Sequential(
+            #state size 24
+            nn.PReLU(24,dtype=var.PREC),
+            nn.Linear(24, 4*var.NV_PRED*var.NT*var.NX,dtype=var.PREC),
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
 
+#gauge equivariant convolutional layers
+lcnn_layers = var.MultiInputSequential(
+            ge.LConv( 1, 4, 6),      
+            ge.LConv( 4, 8, 6),      
+            ge.LConv( 8, 16, 6),   
+            ge.LConv( 16, 32, 6),    
+            ge.LConv( 32, 16, 6),   
+            ge.LConv( 16, 8,6),
+            ge.LConv( 8, 16,6),
+            ge.LConv( 16, 2*var.NV_PRED, 6),
+)
+
+
+lcnn_linear_layer = nn.Sequential(
+         ge.Linear(64,128),
+         ge.Linear(128,2*var.NV_PRED)
+)
 
 class TvGenerator(nn.Module):
     """
@@ -172,11 +96,22 @@ class TvGenerator(nn.Module):
     def __init__(self, ngpu,batch_size):
         super(TvGenerator, self).__init__()
         self.ngpu = ngpu
-        self.conv_layers = conv_layers
-        self.linear_layers = linear_layers
+        if var.GAUGE_EQ == False:
+            self.conv_layers = conv_layers
+            self.linear_layers = linear_layers
+        else:
+            self.lcnn_layers = lcnn_layers
+            #self.lcnn_linear_layer = lcnn_linear_layer
         self.batch_size = batch_size
-    def forward(self, input):
-        x = self.conv_layers(input)
-        x = x.squeeze() #We remove the trivial dimensions
-        x = self.linear_layers(x)
-        return x.view(self.batch_size,var.NV_PRED,4,var.NT,var.NX)
+    def forward(self, u,w):
+    #def forward(self,input):
+        if var.GAUGE_EQ == False:
+            x = self.conv_layers(input)
+            x = x.squeeze() #We remove the trivial dimensions
+            x = self.linear_layers(x)
+            return x.view(self.batch_size,var.NV_PRED,4,var.NT,var.NX)
+        else:  
+            u, w = self.lcnn_layers(u,w)
+            #w = self.lcnn_linear_layer(w)
+            w = w.squeeze() #We remove the trivial dimensions
+            return w.view(self.batch_size,var.NV_PRED,2,var.NT,var.NX)        

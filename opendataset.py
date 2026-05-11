@@ -2,6 +2,7 @@ import torch
 import parameters as var
 import struct #For opening binary data
 import numpy as np
+var.init()
 
 def read_binary_conf(self,path):
     """
@@ -66,14 +67,13 @@ class ConfsDataset(torch.utils.data.Dataset):
         for confID in range(self.no_confs):
             PATH = '/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel' + \
             '/confs/b{0}_{1}x{2}/{3}/2D_U1_Ns{1}_Nt{2}_b{0}0000_m{4}_{5}.ctxt'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
-            PATH_PLAQ = '/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel' + \
-            '/b{0}_{1}x{2}/{3}/plaquettes/plaquette_{1}x{2}_b{0}0000_m{4}_nconf{5}.plaq'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
+            PATH_PLAQ = '/wsgjsc/home/nietocastellanos1/Documents/TVML/plaquettes' + \
+            '/b{0}_{1}x{2}/{3}/plaquette_{1}x{2}_b{0}0000_m{4}_nconf{5}.plaq'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID)
             self.conf_files.append(PATH)
             self.plaq_files.append(PATH_PLAQ)
             self.tv_files.append([])
             for tvID in range(var.NV):
-                PATH='/wsgjsc/home/nietocastellanos1/Documents/TVML/sap/near_kernel/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,tvID)
-          
+                PATH='/wsgjsc/home/nietocastellanos1/Documents/TVML/real_tv/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,tvID)
                 self.tv_files[confID].append(PATH) 
         
     def __getitem__(self, idx):

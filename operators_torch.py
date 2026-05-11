@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import parameters as var
+var.init()
 import random
 
 class Operators():
