@@ -122,7 +122,7 @@ def MakeH5_File(output_path):
             arr = read_binary_plaquette("", path)  # (NT, NX)
             d_plaq[n] = arr.astype(np.complex128)
             if (n % max(1, (Nconf // 10)) == 0 and n > 0):
-                print(f"Conf {n}/{Nconf}")
+                print(f"Plaquette {n}/{Nconf}")
 
         # Write test vectors
         print("Writing test vectors in H5 file")
