@@ -2,6 +2,7 @@ import torch
 import parameters as var
 import struct #For opening binary data
 import numpy as np
+import h5py
 var.init()
 
 def read_binary_conf(self,path):
@@ -99,3 +100,40 @@ class ConfsDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.no_confs
+
+
+class ConfsDatasetHDF5(torch.utils.data.Dataset):
+    def __init__(self, h5_path):
+        self.h5_path = h5_path
+
+        # IMPORTANT: do NOT keep file open here for multi-worker loaders
+        with h5py.File(self.h5_path, "r") as f:
+            self.length = f["confs"].shape[0]
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        # Open per worker (safe for multiprocessing)
+        with h5py.File(self.h5_path, "r") as f:
+            conf = f["confs"][idx]           # (2, NT, NX) complex
+            plaq = f["plaquettes"][idx]      # (NT, NX) complex
+            tv   = f["tvectors"][idx]        # (NV, 2, NT, NX) complex
+
+        # Convert to torch
+        conf = torch.from_numpy(conf)
+        plaq = torch.from_numpy(plaq)
+        tv   = torch.from_numpy(tv)
+
+        # Match your original preprocessing
+        gauge_conf = torch.cat(
+            [torch.real(conf), torch.imag(conf)], dim=0
+        ).to(dtype=var.PREC)   # [4, NT, NX]
+
+        plaquette = torch.stack(
+            [torch.real(plaq), torch.imag(plaq)], dim=0
+        ).to(dtype=var.PREC)   # [2, NT, NX]
+
+        data = torch.cat([gauge_conf, plaquette], dim=0)  # [6, NT, NX]
+
+        return (data, tv.to(var.PREC_COMPLEX), idx)
