@@ -26,7 +26,7 @@ def init():
     TRAIN_LEN = int(NO_CONFS*TRAIN_PROP)
     TEST_LEN = NO_CONFS - TRAIN_LEN 
     PRECISION = "double"
-    LOAD = True
+    LOAD = False
     VERSION = 1 #0 -> assemble P with SAP vectors, 1 -> assemble P with learned vectors
     if LOAD == True:
         SAVE_W = False

@@ -50,31 +50,39 @@ def binaryTestV2ptTestV():
     
 def MakeH5_File(output_path):
     PATH_CONF = '/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel' + \
-        '/confs/b{0}_{1}x{2}/{3}'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER)
+        '/confs/b{0}_{1}x{2}/{3}/'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER)
 
     PATH_TV = '/wsgjsc/home/nietocastellanos1/Documents/TVML/real_tv' + \
         '/b{0}_{1}x{2}/{3}/'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER)
 
-    PATH_PLAQUETTE = '/wsgjsc/home/nietocastellanos1/Documents/TVML/plaquettes' + \
-        '/b{0}_{1}x{2}/{3}'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER)
+    PATH_PLAQ = '/wsgjsc/home/nietocastellanos1/Documents/TVML/plaquettes' + \
+        '/b{0}_{1}x{2}/{3}/'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER)
 
 
     Nconf = var.NO_CONFS
     NV = var.NV
     NT = var.NT
     NX = var.NX
-    
+
+    conf_files = [] #List with files
+    plaq_files = []
     tv_files = []
     for confID in range(Nconf):
+        conf_files.append(PATH_CONF+"2D_U1_Ns{0}_Nt{1}_b{2}0000_m{3}_{4}.ctxt".format(NX,NT,var.BETA,var.M0_STRING,confID))
+        plaq_files.append(PATH_PLAQ+"plaquette_{0}x{1}_b{2}0000_m{3}_nconf{4}.plaq".format(NX,NT,var.BETA,var.M0_STRING,confID))
         tv_files.append([])
         for tvID in range(NV):
-            PATH='/wsgjsc/home/nietocastellanos1/Documents/TVML/real_tv/b{0}_{1}x{2}/{3}/tvector_{1}x{2}_b{0}0000_m{4}_nconf{5}_tv{6}.tv'.format(int(var.BETA),var.NX,var.NT,var.M0_FOLDER,var.M0_STRING,confID,tvID)
-            tv_files[confID].append(PATH) 
+             tv_files[confID].append(PATH_TV+"tvector_{0}x{1}_b{2}0000_m{3}_nconf{4}_tv{5}.tv".format(NX,NT,
+                var.BETA,var.M0_STRING,confID,tvID                                                  
+             ))
 
 
     # ---- Create HDF5 file ----
     with h5py.File(output_path, "w") as f:
-
+        f.attrs["NX"] = NX
+        f.attrs["NT"] = NT
+        f.attrs["NV"] = NV
+        f.attrs["beta"] = var.BETA
         d_confs = f.create_dataset(
             "confs",
             shape=(Nconf, 2, NT, NX),
@@ -101,9 +109,8 @@ def MakeH5_File(output_path):
 
         # Write configurations
         print("Writing configurations in H5 file")
-        conf_paths = sorted(glob(PATH_CONF + "/*.ctxt"))
 
-        for n, path in enumerate(conf_paths):
+        for n, path in enumerate(conf_files):
             arr = read_binary_conf("", path)  # (2, NT, NX)
             d_confs[n] = arr.astype(np.complex128)
             if (n % max(1, (Nconf // 10)) == 0 and n > 0):
@@ -111,8 +118,7 @@ def MakeH5_File(output_path):
 
         # Write plaquettes
         print("Writing plaquettes in H5 file")
-        plaq_paths = sorted(glob(PATH_PLAQUETTE + "/*.plaq"))
-        for n, path in enumerate(plaq_paths):
+        for n, path in enumerate(plaq_files):
             arr = read_binary_plaquette("", path)  # (NT, NX)
             d_plaq[n] = arr.astype(np.complex128)
             if (n % max(1, (Nconf // 10)) == 0 and n > 0):

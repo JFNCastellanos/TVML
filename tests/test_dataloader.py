@@ -1,5 +1,5 @@
 import torch
-from opendataset import ConfsDataset, read_binary_plaquette #class for opening gauge confs
+from opendataset import ConfsDataset, read_binary_plaquette, ConfsDatasetHDF5 #class for opening gauge confs
 import utils
 import parameters as var
 import numpy as np
@@ -10,9 +10,12 @@ class TestDataloader():
     """
     Loading the configurations and the near-kernel test vectors
     """
-    def __init__(self,batchsize):
+    def __init__(self,batchsize,file_format):
         self.batch_size = batchsize
-        dataset = ConfsDataset()                     
+        if file_format == "h5":
+            dataset = ConfsDatasetHDF5("../h5Data/b2_64x64_m-01884.h5")           
+        else:
+            dataset = ConfsDataset() 
         workers    = 1
         batch_size = self.batch_size
         dataloader = torch.utils.data.DataLoader(

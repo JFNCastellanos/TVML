@@ -119,7 +119,6 @@ class ConfsDatasetHDF5(torch.utils.data.Dataset):
             conf = f["confs"][idx]           # (2, NT, NX) complex
             plaq = f["plaquettes"][idx]      # (NT, NX) complex
             tv   = f["tvectors"][idx]        # (NV, 2, NT, NX) complex
-
         # Convert to torch
         conf = torch.from_numpy(conf)
         plaq = torch.from_numpy(plaq)
