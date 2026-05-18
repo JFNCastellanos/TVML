@@ -1,6 +1,7 @@
 import numpy as np
 import parameters as var
 import torch
+import h5py
 
 def formatt(x):
     """
@@ -210,3 +211,94 @@ class MetadataSaver:
         with open(filepath, "r") as f:
             return json.load(f)
 
+
+
+def SavePredictionsHDF5(dataloader, data_name, model, device, output_file):
+    """
+    Saves all predicted test vectors into a single HDF5 file.
+
+    Dataset layout:
+    - predictions: (N_total, NV, 2, NT, NX) complex64
+    - confsID: (N_total,)
+    """
+
+    model.eval()
+
+    all_preds = []
+    all_confs = []
+
+    with torch.no_grad():
+        for batch_id, batch in enumerate(dataloader):
+            data_batch = batch[0].to(device)
+            confsID = batch[2]
+
+            if not var.GAUGE_EQ:
+                pred = model(data_batch)  # (B, 4*NV, NT, NX)
+                B = pred.shape[0]
+
+                pred = pred.view(B, var.NV_PRED, 4, var.NT, var.NX)
+
+                real = torch.stack([pred[:, :, 0], pred[:, :, 1]], dim=2)
+                imag = torch.stack([pred[:, :, 2], pred[:, :, 3]], dim=2)
+
+                pred_complex = torch.complex(real, imag)
+
+            else:
+                local_trans_obj = data_batch.shape[1] - 4
+                local_t_object = data_batch[:, 4:]
+
+                real = torch.stack([data_batch[:, 0], data_batch[:, 1]], dim=1)
+                imag = torch.stack([data_batch[:, 2], data_batch[:, 3]], dim=1)
+                u = torch.complex(real, imag)
+
+                if local_trans_obj == 2:
+                    real = local_t_object[:, 0].unsqueeze(1)
+                    imag = local_t_object[:, 1].unsqueeze(1)
+
+                w = torch.complex(real, imag)
+
+                pred_complex = model(u, w)
+                B = pred_complex.shape[0]
+
+                pred_complex = pred_complex.view(
+                    B, var.NV_PRED, 2, var.NT, var.NX
+                )
+
+            # Normalize
+            norms = torch.linalg.vector_norm(
+                pred_complex, dim=(-3, -2, -1)
+            ).view(B, var.NV_PRED, 1, 1, 1)
+
+            pred_complex = pred_complex / norms
+
+            # Move to CPU numpy
+            pred_np = pred_complex.cpu().numpy()
+
+            all_preds.append(pred_np)
+            all_confs.append(np.array(confsID))
+
+    # Concatenate all batches
+    all_preds = np.concatenate(all_preds, axis=0)
+    all_confs = np.concatenate(all_confs, axis=0)
+
+    # Write to HDF5
+    with h5py.File(output_file, "w") as f:
+        f.create_dataset(
+            "predictions",
+            data=all_preds,
+            dtype=np.complex128,
+            compression="gzip"
+        )
+
+        f.create_dataset(
+            "confsID",
+            data=all_confs,
+            dtype=np.int32
+        )
+
+        # Optional metadata
+        f.attrs["NX"] = var.NX
+        f.attrs["NT"] = var.NT
+        f.attrs["NV_PRED"] = var.NV_PRED
+        f.attrs["beta"] = var.BETA
+        f.attrs["data_name"] = data_name

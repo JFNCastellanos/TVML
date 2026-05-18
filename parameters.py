@@ -9,10 +9,10 @@ def init():
     global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP, PRECISION, PREC, PREC_COMPLEX
     global TRAIN_LEN, TEST_LEN, NV_PRED
     global GAUGE_EQ, LOAD, SAVE_W, VERSION
-    BETA, NX, NT= 2, 32, 32
+    BETA, NX, NT= 2, 64, 64
     M0 = -0.18840579710144945
     M0_STRING = utils.formatt(M0) #format string
-    NO_CONFS = 100 #number of confs to load
+    NO_CONFS = 500 #number of confs to load
     M0_FOLDER = "m-018"#"m-018" #folder with confs
     BLOCKS_X, BLOCKS_T = 2, 2 #Change to 8, 8
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
@@ -22,11 +22,11 @@ def init():
     N = 2*NX*NT  #Number of degrees of freedom on the fine grid
     NGPU = 1
     DEVICE = torch.device("cuda:0" if (torch.cuda.is_available() and NGPU > 0) else "cpu")
-    TRAIN_PROP = 0.5 #Proportion of total examples used for training
+    TRAIN_PROP = 0.1 #Proportion of total examples used for training
     TRAIN_LEN = int(NO_CONFS*TRAIN_PROP)
     TEST_LEN = NO_CONFS - TRAIN_LEN 
     PRECISION = "double"
-    LOAD = False
+    LOAD = True
     VERSION = 1 #0 -> assemble P with SAP vectors, 1 -> assemble P with learned vectors
     if LOAD == True:
         SAVE_W = False
