@@ -9,11 +9,11 @@ def init():
     global BETA, NX, NT, M0, M0_STRING, NO_CONFS, BLOCKS_X, BLOCKS_T, X_ELEMENTS, T_ELEMENTS, NB, NV, M0_FOLDER, N, NGPU, DEVICE, TRAIN_PROP, PRECISION, PREC, PREC_COMPLEX
     global TRAIN_LEN, TEST_LEN, NV_PRED
     global GAUGE_EQ, LOAD, SAVE_W, VERSION
-    BETA, NX, NT= 4, 64, 64
-    M0 = -0.1023#-0.18840579710144945
+    BETA, NX, NT= 6, 64, 64
+    M0 = -0.0709#-0.18840579710144945
     M0_STRING = utils.formatt(M0) #format string
     NO_CONFS = 500 #number of confs to load
-    M0_FOLDER = "m-01023"#"m-018" #folder with confs
+    M0_FOLDER = "m-0709"#"m-018" #folder with confs
     BLOCKS_X, BLOCKS_T = 2, 2 #Change to 8, 8
     X_ELEMENTS, T_ELEMENTS = int(NX/BLOCKS_X), int(NT/BLOCKS_T) #elements per block
     NB = BLOCKS_X*BLOCKS_T #number of lattice blocks
