@@ -54,7 +54,7 @@ def ll_parameters(in_channel,out_channel):
 import torch
 import struct
 
-def SavePredictions(dataloader, model, device):
+def SavePredictions(dataloader, model, dataname, device):
     """
     Saves test vectors predicted with the model into binary files.
     One file per test vector. The data layout is the same as for
@@ -99,7 +99,8 @@ def SavePredictions(dataloader, model, device):
             pred_complex_normalized = pred_complex_normalized.cpu().detach().numpy()
             for i in range(B):
                 for tv in range(var.NV_PRED):
-                    file_path = "fake_tv/b{0}_{1}x{2}/{3}/conf{4}_fake_tv{5}.tv".format(var.BETA,var.NX,var.NT,var.M0_FOLDER,confsID[i],tv)
+                    file_path = "fake_tv/b{0}_{1}x{2}/{3}/{4}/conf{5}_fake_tv{6}.tv".format(var.BETA,var.NX,var.NT,var.M0_FOLDER,
+                                                                        dataname,confsID[i],tv)
                     fmt = "<3i2d"
                     with open(file_path, "wb") as f:
                         for x in range(var.NX):
