@@ -173,7 +173,7 @@ class LPTConv(nn.Module):
 def Hp(u,orientation,mu,k):
 def Tp(u,path):
     #for instance
-    #path = [+1,-1,-1,+2,+2] 1 = \hat{t}, 2 = \hat{x}
+    #path = [-1,-2,-1,+2,+2] 1 = \hat{t}, 2 = \hat{x}
     #FINISH AFTER HOLIDAYS
     p_transporter = 1
     nhops = len(path)
@@ -207,4 +207,19 @@ def Tp(u,path):
             p_transporter *= torch.roll(u_mu.conj(),shifts=i*orientation,dims=1+mu)
     return p_transporter.unsqueeze(1)    
 
+#Just thinking ...
+p_transporter = 1
+for p in path:
+    mu  = abs(p)-1
+        #x-p 
+    if p < 0
+        p_transporter *= u[mu,x]
+        u = u[:,x+abs(p)]
+    elif p > 0:
+        #x+p
+        p_transporter *= u.conj()[mu,x-abs(p)]
+        u = u[:,x-abs(p)] #
+    else:
+        raise("p should be positive or negative, not zero")     
+    return p_transporter
         
