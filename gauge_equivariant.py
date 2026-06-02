@@ -170,42 +170,47 @@ class LPTConv(nn.Module):
         w = torch.einsum('ij, bjxt -> bixt', self.weight, t_w)
         return u, w
 
-def Hp(u,orientation,mu,k):
 def Tp(u,path):
     #for instance
-    #path = [-1,-2,-1,+2,+2] 1 = \hat{t}, 2 = \hat{x}
-    #FINISH AFTER HOLIDAYS
+    #path = [-1,-2,-1,+2,+2] 1 = \hat{t}, 2 = \hat{x}, I don't use +0 -0 for obvious reasons
+    #FTODO
+    #Check that this implementation works fine.
+    #u.shape = (Batch,2,NT,NX)
     p_transporter = 1
-    nhops = len(path)
-    # Init #
-    mu  = abs(path[0])-1
-    u_roll = u[:] #(B,2,NT,NX)
     for p in path:
         mu  = abs(p)-1
         if p > 0:
             #Hp = U^+_p(x-p)
             #x-p
-            u_mu = torch.roll(u_mu.conj(),shifts=1,dims=1+mu)
-            p_transporter *= u_mu
+            u[:,0] = torch.roll(u[:,0],shifts=1,dims=1+mu)
+            u[:,1] = torch.roll(u[:,1],shifts=1,dims=1+mu)
+            #u = torch.roll(u, shifts=1, dims=2+mu) this might do the same thing 
+            p_transporter *= u[:,mu].conj()
         elif p < 0:
             #x+p
-            p_transporter *= u_roll[:,mu] #We roll both components ...
-            u_roll = torch.roll(u_roll,shifts=-1,dims=2+mu)
+            p_transporter *= u[:,mu] #We roll both components ...
+            u[:,0] = torch.roll(u[:,0],shifts=-1,dims=1+mu)
+            u[:,1] = torch.roll(u[:,1],shifts=-1,dims=1+mu)
+            #u = torch.roll(u, shifts=-1, dims=2+mu) I have to check if this makes the same or not
         else:
             raise("p should be positive or negative, not zero")
     return p_transporter
         
-    
-    if orientation == -1:
+
+#def transporter(u,orientation,mu,k):
+#    p_transporter = 1
+#    u_mu = u[:,mu] #(B,NT,NX)
+    #x+mu
+#    if orientation == -1:
         #We are just multiplying U(1) numbers, so the order of operations is not relevant. For a different group this 
         #function would have to be rewritten respecting the order. 
-        for i in range(k):
-            p_transporter *= torch.roll(u_mu,shifts=i*orientation,dims=1+mu)
+#        for i in range(k):
+#            p_transporter *= torch.roll(u_mu,shifts=i*orientation,dims=1+mu)
     #x-mu
-    elif orientation == 1:
-        for i in range(1,k+1):
-            p_transporter *= torch.roll(u_mu.conj(),shifts=i*orientation,dims=1+mu)
-    return p_transporter.unsqueeze(1)    
+#    elif orientation == 1:
+#        for i in range(1,k+1):
+#            p_transporter *= torch.roll(u_mu.conj(),shifts=i*orientation,dims=1+mu)
+#    return p_transporter.unsqueeze(1)    
 
 #Just thinking ...
 p_transporter = 1
@@ -214,11 +219,12 @@ for p in path:
         #x-p 
     if p < 0
         p_transporter *= u[mu,x]
-        u = u[:,x+abs(p)]
+        u = u[:,x+abs(p)] #Roll both components 
     elif p > 0:
         #x+p
-        p_transporter *= u.conj()[mu,x-abs(p)]
         u = u[:,x-abs(p)] #
+        p_transporter *= u.conj()[mu,x]
+       
     else:
         raise("p should be positive or negative, not zero")     
     return p_transporter
