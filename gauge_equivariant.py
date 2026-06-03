@@ -171,61 +171,32 @@ class LPTConv(nn.Module):
         return u, w
 
 def Tp(u,path):
-    #for instance
-    #path = [-1,-2,-1,+2,+2] 1 = \hat{t}, 2 = \hat{x}, I don't use +0 -0 for obvious reasons
-    #FTODO
-    #Check that this implementation works fine.
-    #u.shape = (Batch,2,NT,NX)
+    """
+    Parallel transport along an arbitrary path given as a list. For instance
+    path = [-1,-2,-1,+2,+2] 1 = hat{t}, 2 = hat{x}, I don't use +0 -0 for obvious reasons
+    u.shape = (Batch,2,NT,NX)
+    """
     p_transporter = 1
+    #For torch.roll bear in mind that
+    #shift = 1  --> x-1
+    #shift = -1 --> x+1
     for p in path:
         mu  = abs(p)-1
         if p > 0:
             #Hp = U^+_p(x-p)
             #x-p
-            u[:,0] = torch.roll(u[:,0],shifts=1,dims=1+mu)
-            u[:,1] = torch.roll(u[:,1],shifts=1,dims=1+mu)
-            #u = torch.roll(u, shifts=1, dims=2+mu) this might do the same thing 
+            #u[:,0] = torch.roll(u[:,0],shifts=1,dims=1+mu)
+            #u[:,1] = torch.roll(u[:,1],shifts=1,dims=1+mu)
+            #The following line is equivalent to the two previous lines
+            u = torch.roll(u, shifts=1, dims=2+mu) 
             p_transporter *= u[:,mu].conj()
         elif p < 0:
+            #Hp = U_p(x)
             #x+p
             p_transporter *= u[:,mu] #We roll both components ...
-            u[:,0] = torch.roll(u[:,0],shifts=-1,dims=1+mu)
-            u[:,1] = torch.roll(u[:,1],shifts=-1,dims=1+mu)
-            #u = torch.roll(u, shifts=-1, dims=2+mu) I have to check if this makes the same or not
+            #u[:,0] = torch.roll(u[:,0],shifts=-1,dims=1+mu)
+            #u[:,1] = torch.roll(u[:,1],shifts=-1,dims=1+mu)
+            u = torch.roll(u, shifts=-1, dims=2+mu) 
         else:
             raise("p should be positive or negative, not zero")
     return p_transporter
-        
-
-#def transporter(u,orientation,mu,k):
-#    p_transporter = 1
-#    u_mu = u[:,mu] #(B,NT,NX)
-    #x+mu
-#    if orientation == -1:
-        #We are just multiplying U(1) numbers, so the order of operations is not relevant. For a different group this 
-        #function would have to be rewritten respecting the order. 
-#        for i in range(k):
-#            p_transporter *= torch.roll(u_mu,shifts=i*orientation,dims=1+mu)
-    #x-mu
-#    elif orientation == 1:
-#        for i in range(1,k+1):
-#            p_transporter *= torch.roll(u_mu.conj(),shifts=i*orientation,dims=1+mu)
-#    return p_transporter.unsqueeze(1)    
-
-#Just thinking ...
-p_transporter = 1
-for p in path:
-    mu  = abs(p)-1
-        #x-p 
-    if p < 0
-        p_transporter *= u[mu,x]
-        u = u[:,x+abs(p)] #Roll both components 
-    elif p > 0:
-        #x+p
-        u = u[:,x-abs(p)] #
-        p_transporter *= u.conj()[mu,x]
-       
-    else:
-        raise("p should be positive or negative, not zero")     
-    return p_transporter
-        
