@@ -95,7 +95,7 @@ class Linear(nn.Module):
         self.n_out = n_out
         self.dims = 2 #We hardcode two dimensions for the Schwinger model
         #Initialize weights Omega_{i,j,mu,k} (j,mu,k) are the in features, (i) is the out feature 
-        w_in_size  = self.n_in 
+        w_in_size  = self.n_in
         w_out_size = self.n_out
 
         std = 1.0
@@ -114,28 +114,21 @@ class Linear(nn.Module):
 class LPTConv(nn.Module):
     """
     A lattice gauge equivariant convolution
-    f_i(U,W) = Sum_{j,mu,k} Omega_{i,j,mu,k} U_{x,kmu}W_j(x+k hat{mu})
-    
-              = U_mu(x) U_mu(x+mu) ... U_mu(x+(K-1)mu), if k>0
-    U_{x,kmu} =  U_mu(x), if k = 0
-              = U_mu^+(x-mu) U_mu^+(x-2mu) ... U_mu^+(x-|k|mu), if k<0
+    f_i(U,W) = Sum_{j,p} Omega_{i,j,p} T_p W_j(x),
+    where p denotes a path and T_p W_j(x) is the parallel transported version of W_j(x)
 
     n_in and n_out should consider that u and w are complex tensors
-    The kernel size in this example is 2 and the total number of (complex) weights is 5.
-    o     o     o
-          |
-    o --- o --- o
-          |
-    o     o     o
+
+
+    TODO: Check if this implementation works fine.
     """
-    def __init__(self, n_in, n_out, kernel_size):
+    def __init__(self, n_in, n_out, paths):
         super(LConv, self).__init__()
         self.n_in = n_in
         self.n_out = n_out
-        self.kernel_size = kernel_size
         self.dims = 2 #We hardcode two dimensions for the Schwinger model
         #Initialize weights Omega_{i,j,mu,k} (j,mu,k) are the in features, (i) is the out feature 
-        w_in_size = self.n_in * (2 * (self.kernel_size-1)  * self.dims + 1)
+        w_in_size = self.n_in  * len(paths)
         w_out_size = self.n_out
 
         std = 1.0
@@ -149,21 +142,19 @@ class LPTConv(nn.Module):
     def forward(self, u, w):
         #We assume that the inputs are given as complex tensors
         #w.shape = (Batch,n_in,NT,NX) 
-        #u.shape = (Batch,2,NT,NX)
-        
-        transported_terms = [w.clone()] #k = 0
-        for orientation in [+1, -1]:
-            for mu in range(self.dims):
-                w_transport = w.clone()
-                for k in range(1, self.kernel_size):
-                    #transported terms
-                    #Compute W_j(x - orientation * k mu) (the sign depends on the orientation)
-                    w_transport = torch.roll(w,shifts=k*orientation,dims=2+mu)  #Roll automatically considers periodic boundaries
-                    u_transporter = transporter(u,orientation,mu,k) #U_{x,kmu}
-                    #print("w transport shape",w_transport.shape)
-                    #print("u transporter shape",u_transporter.shape)
-                    transported_terms.append(w_transport*u_transporter)
-
+        #u.shape = (Batch,2,NT,NX) 
+        for path in paths:
+            w_transport = w.clone()
+            #Let us transport w
+            for p in path:
+                 mu  = abs(p)-1
+                if p > 0:
+                    w_transport = torch.roll(w_transport, shifts=1, dims=2+mu) 
+                elif p < 0:
+                    w_transport = torch.roll(w_transport, shifts=-1, dims=2+mu)             
+            pt = Tp(u,path)
+            transported_terms.append(w_transport*pt)
+       
         # combine terms into a single tensor (along dim = 1 because of the batches)
         t_w = torch.cat(transported_terms, dim=1)
         # f_i(W) = w_{ij} TW_{j}(t,x)
@@ -200,3 +191,4 @@ def Tp(u,path):
         else:
             raise("p should be positive or negative, not zero")
     return p_transporter
+
