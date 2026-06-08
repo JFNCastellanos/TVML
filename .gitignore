@@ -17,3 +17,4 @@ h5Data/
 venv/
 tests/__pycache__
 tests/.ipynb_checkpoints
+losses.txt
