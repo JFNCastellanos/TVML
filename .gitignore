@@ -15,3 +15,5 @@ plaquettes/
 model_weights/
 h5Data/
 venv/
+tests/__pycache__
+tests/.ipynb_checkpoints
