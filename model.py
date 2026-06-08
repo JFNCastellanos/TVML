@@ -11,6 +11,7 @@ var.init()
 #padding=0, output_padding=0, groups=1, bias=True, dilation=1, padding_mode='zeros', 
 #device=None, dtype=None)
 
+#--------------------------------------------------------------------------#
 conv_layers = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
             #size 6 x NT x NX
@@ -44,6 +45,8 @@ linear_layers = nn.Sequential(
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
+#-----------------------------------------------------------------------------#
+
 conv_layers_v2 = nn.Sequential(
             #Conv2D(in_chan,out_chan,kernel,stride,padding)
             #size 6 x NT x NX
@@ -70,8 +73,7 @@ linear_layers_v2 = nn.Sequential(
     #The state is later reshaped into (B,NV_PRED,4,NT,NX) (real) and then (B,NV_PRED,2,NT,NX) (complex)
 )
 
-
-#gauge equivariant convolutional layers
+#-------------------------------------------#
 lcnn_layers = var.MultiInputSequential(
             ge.LConv( 1, 2, 6),      
             ge.LConv( 2, 4, 6),      
@@ -85,6 +87,28 @@ lcnn_linear_layer = nn.Sequential(
          ge.Linear(64,128),
          ge.Linear(128,2*var.NV_PRED)
 )
+#-------------------------------------------#
+
+paths = [[1,1],[1,2],[1,-2],
+         [-1,-1],[-1,2],[-1,-2],
+         [2,1],[2,-1],[2,2],
+         [-2,1],[-2,-1],[-2,-2],
+        [1],[-1],[2],[-2],
+        [1,1,1], [1,1,2], [1,1,-2],
+        [1,2,1], [1,2,-1], [1,2,2],
+        [-1,-1,-1], [-1,-1,2], [-1,-1,-2],
+        [-1,2,1], [-1, 2, -1], [-1,-2,1],
+        [-1,-2,-1]]
+
+ptc_layers = var.MultiInputSequential(
+            ge.LPTConv( 1, 2,paths),
+            ge.LPTConv( 2, 4,paths),
+            ge.LPTConv( 4, 8,paths),
+            ge.LPTConv( 8, 16,paths),
+            ge.LPTConv( 16, 18,paths),
+            ge.LPTConv( 18, 2*var.NV_PRED,paths),
+)
+
 
 class TvGenerator(nn.Module):
     """
@@ -97,7 +121,7 @@ class TvGenerator(nn.Module):
             self.conv_layers = conv_layers
             self.linear_layers = linear_layers
         else:
-            self.lcnn_layers = lcnn_layers
+            self.lcnn_layers = ptc_layers
             #self.lcnn_linear_layer = lcnn_linear_layer
         self.batch_size = batch_size
     def forward(self, u,w):
