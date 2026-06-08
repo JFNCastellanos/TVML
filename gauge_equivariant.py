@@ -118,17 +118,15 @@ class LPTConv(nn.Module):
     where p denotes a path and T_p W_j(x) is the parallel transported version of W_j(x)
 
     n_in and n_out should consider that u and w are complex tensors
-
-
-    TODO: Check if this implementation works fine.
     """
     def __init__(self, n_in, n_out, paths):
-        super(LConv, self).__init__()
+        super(LPTConv, self).__init__()
         self.n_in = n_in
         self.n_out = n_out
         self.dims = 2 #We hardcode two dimensions for the Schwinger model
+        self.paths = paths
         #Initialize weights Omega_{i,j,mu,k} (j,mu,k) are the in features, (i) is the out feature 
-        w_in_size = self.n_in  * len(paths)
+        w_in_size = self.n_in  * len(self.paths)
         w_out_size = self.n_out
 
         std = 1.0
@@ -143,20 +141,28 @@ class LPTConv(nn.Module):
         #We assume that the inputs are given as complex tensors
         #w.shape = (Batch,n_in,NT,NX) 
         #u.shape = (Batch,2,NT,NX) 
-        for path in paths:
+        transported_terms = [] #k = 0
+        for path in self.paths:
             w_transport = w.clone()
             #Let us transport w
             for p in path:
-                 mu  = abs(p)-1
+                mu  = abs(p)-1
                 if p > 0:
                     w_transport = torch.roll(w_transport, shifts=1, dims=2+mu) 
                 elif p < 0:
                     w_transport = torch.roll(w_transport, shifts=-1, dims=2+mu)             
             pt = Tp(u,path)
             transported_terms.append(w_transport*pt)
-       
+            #pt.shape = [Batch, 1, Nt, Nx]
+            #w_transport.shape = [Batch,n_in,Nt,Nx]
+            #print("w_transport",w_transport.shape)
         # combine terms into a single tensor (along dim = 1 because of the batches)
         t_w = torch.cat(transported_terms, dim=1)
+        #t_w.shape = [Batch,n_in*paths,Nt,Nx]
+        #transported_terms.shape = [path,Batch,n_in,Nt,Nx]
+        #print("t_w",t_w.shape)
+        #print("transported terms",transported_terms[0].shape)
+        #print("weight",self.weight.shape)
         # f_i(W) = w_{ij} TW_{j}(t,x)
         w = torch.einsum('ij, bjxt -> bixt', self.weight, t_w)
         return u, w
@@ -190,5 +196,4 @@ def Tp(u,path):
             u = torch.roll(u, shifts=-1, dims=2+mu) 
         else:
             raise("p should be positive or negative, not zero")
-    return p_transporter
-
+    return p_transporter.unsqueeze(1)

@@ -118,6 +118,8 @@ class TestLCNN():
         return out
 
 
+
+
 def test_LCNN_layers():
     batch_size = 100
     w = torch.rand((batch_size,1,var.NT,var.NX),dtype=var.PREC_COMPLEX).to(var.DEVICE) 
@@ -135,12 +137,30 @@ def test_LCNN_layers():
     print("U shape after convolution",u.shape)
     #gauge equivariant convolutional layers
 
+def test_PTC_layers():
+    batch_size = 100
+    w = torch.rand((batch_size,1,var.NT,var.NX),dtype=var.PREC_COMPLEX).to(var.DEVICE) 
     
+    # U(1) variables with complex128 precision
+    theta = 2 * torch.pi * torch.rand(batch_size, 2, var.NT, var.NX, dtype=var.PREC).to(var.DEVICE)
+    u = torch.exp(1j * theta)
+    print("Input shape",w.shape)
+    paths1 = [[-1,-2,-1,2,2],[1,1,2,2]]
+    paths2 = [[-1,-1,2,2],[1,2]]
+    print("--------------------")
+    print("Layer 1 with {0} paths".format(len(paths1)))
+    for p in paths1:
+        print(*p)
+    print("--------------------")
+    print("Layer 2 with {0} paths".format(len(paths2)))
+    for p in paths2:
+        print(*p)
+    print("--------------------")
+    lcnn_layers = var.MultiInputSequential(
+            ge.LPTConv( 1, 4,paths1),
+            ge.LPTConv( 4, 16,paths2),
+    )
+    u, w = lcnn_layers(u,w)
+    print("W shape after convolution",w.shape)
+    print("U shape after convolution",u.shape)
     
-    #w = w.flatten(start_dim=1)
-    #print("Output shape after flatten",w.shape)
-    #ge_linear_layers = torch.nn.Sequential(
-    #        torch.nn.Linear(w.shape[1], 4*var.NV_PRED*var.NT*var.NX,bias=False,device=var.DEVICE,dtype=var.PREC),
-    #)
-    #w = ge_linear_layers(w)
-    #print("Output shape after linear layer",w.shape)
