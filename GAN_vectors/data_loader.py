@@ -48,10 +48,9 @@ class ConfsDataset(torch.utils.data.Dataset):
     plaquette files layout:
         x, t, Re(U01), Im(U01)
         
-    Each conf has the torch tensor shape U[μ,t,x] (4 x NX x NT) (we split real and imaginary part)
-    gauge_conf = [Re(U0),Re(U1),Im(U0),Im(U1)]
-    plaquette = [Re(U01),Im(U01)]
-    data = [Re(U0),Re(U1),Im(U0),Im(U1),Re(U01),Im(U01)]
+    Each conf has the torch tensor shape U[μ,t,x] (2 x NX x NT) (complex numbers)
+    gauge_conf = [U0,U1]
+    Tv = [[tv0_id0,tv1_id0],...]
     
     For the near kernel vectors we don't do the splitting, since we will evaluate them
     with complex tensors.
