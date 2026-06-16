@@ -26,13 +26,12 @@ paths_gen = [[1,1],[1,2],[1,-2],
         [1,2,1], [1,2,-1], [1,2,2]]
 
 ptc_layers_gen = var.MultiInputSequential(
-            ge.LPTConv( 1, 16,paths_gen),
-            ge.LPTConv( 16, 2,paths_gen)
-            #ge.LPTConv( 2, 4,paths),
-            #ge.LPTConv( 4, 8,paths),
-            #ge.LPTConv( 8, 16,paths),
-            #ge.LPTConv( 16, 18,paths),
-            #ge.LPTConv( 18, 2*var.NV_PRED,paths),
+            ge.LPTConv( 1, 2,paths_gen),
+            ge.LPTConv( 2, 4,paths_gen),
+            ge.LPTConv( 4, 8,paths_gen),
+            ge.LPTConv( 8, 16,paths_gen),
+            ge.LPTConv( 16, 18,paths_gen),
+            ge.LPTConv( 18, 2,paths_gen)
             )
 
 class Generator(nn.Module):

@@ -3,11 +3,12 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import parameters as var #Configuration and coarsening parameters
+from eval_gan import check_metric
 var.init() #initializes parameter
 
 
 #We train model for one configuration and many test vectors
-def train(dataloader, Gen, Disc, criterion, optimizerG,optimizerD,lossesG,lossesD):
+def train(dataloader, Gen, Disc, criterion, optimizerG,optimizerD,lossesG,lossesD, lamb):
     Gen.train()
     Disc.train()
     #u = conf.repeat(batch_size,2,var.NT,var.NX) #gauge configuration
@@ -18,7 +19,8 @@ def train(dataloader, Gen, Disc, criterion, optimizerG,optimizerD,lossesG,losses
         u = batch[0].to(var.DEVICE)      # shape (B, 2, NT, NX) #Gauge conf 
         w = batch[1].to(var.DEVICE)      # shape (B, 2, NT, NX) #Test vectors
         batch_size = w.shape[0]
-
+        norms = torch.linalg.vector_norm(w[:],dim=(-3,-2, -1)).view(batch_size, 1, 1, 1)
+        w = w / norms
         # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
         Disc.zero_grad()
         label = torch.full((batch_size*2*var.NT*var.NX,), real_label, dtype=var.PREC, device=var.DEVICE)
@@ -42,7 +44,8 @@ def train(dataloader, Gen, Disc, criterion, optimizerG,optimizerD,lossesG,losses
 
         fake = Gen(u,random_noise)
         label.fill_(fake_label)
-
+        
+        
         # Classify all fake batch with D
         D_Gw = Disc(u,fake.detach()).view(-1) #View flattens the tensor
         
@@ -63,7 +66,7 @@ def train(dataloader, Gen, Disc, criterion, optimizerG,optimizerD,lossesG,losses
         # Since we just updated D, perform another forward pass of all-fake batch through D
         output = Disc(u,fake).view(-1) 
         # Calculate G's loss based on this output
-        errG = criterion(output, label)
+        errG = criterion(output, label) + lamb*check_metric(fake,w)
         # Calculate gradients for G
         errG.backward()
         D_G_z2 = output.mean().item()
@@ -79,29 +82,3 @@ def train(dataloader, Gen, Disc, criterion, optimizerG,optimizerD,lossesG,losses
         # Save Losses for plotting later
         lossesG.append(errG.item())
         lossesD.append(errD.item())
-
-
-"""
-# Training Loop
-for epoch in epochs:
-    for batch in dataloader_real_sequences:
-        # 1. Update Discriminator
-        z = sample_noise(batch_size)
-        generated_sequences = G(z)
-        d_loss = bce_loss(D(generated_sequences), fake_labels) + bce_loss(D(batch), real_labels)
-        # Standard discriminator update...
-        d_optimizer.zero_grad(); d_loss.backward(); d_optimizer.step()
-
-        # 2. Update Generator
-        z = sample_noise(batch_size)
-        generated_sequences = G(z)
-        adversarial_loss = -torch.log(D(generated_sequences))  # Standard adversarial part
-        
-        # Compute Physics Loss
-        thetas = generated_sequences[:, :, 0]  # Extract angle from output
-        physics_loss = compute_pendulum_physics_loss(thetas, g, L, b)
-        
-        # Combined Generator Loss
-        g_loss = adversarial_loss + lambda_param * physics_loss
-        g_optimizer.zero_grad(); g_loss.backward(); g_optimizer.step()
-"""
