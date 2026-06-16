@@ -1,7 +1,7 @@
 # Shared application configuration for all three executables
 beta = 2.0
 m0 = -0.18840579710144945 
-Nv = 500
+Nv = 10
 number_of_confs = 1
 gauge_conf_dir = /wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs
 fake_tv_base_dir = ../../fake_tv

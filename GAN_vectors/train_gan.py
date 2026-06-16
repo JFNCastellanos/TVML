@@ -79,3 +79,29 @@ def train(dataloader, Gen, Disc, criterion, optimizerG,optimizerD,lossesG,losses
         # Save Losses for plotting later
         lossesG.append(errG.item())
         lossesD.append(errD.item())
+
+
+"""
+# Training Loop
+for epoch in epochs:
+    for batch in dataloader_real_sequences:
+        # 1. Update Discriminator
+        z = sample_noise(batch_size)
+        generated_sequences = G(z)
+        d_loss = bce_loss(D(generated_sequences), fake_labels) + bce_loss(D(batch), real_labels)
+        # Standard discriminator update...
+        d_optimizer.zero_grad(); d_loss.backward(); d_optimizer.step()
+
+        # 2. Update Generator
+        z = sample_noise(batch_size)
+        generated_sequences = G(z)
+        adversarial_loss = -torch.log(D(generated_sequences))  # Standard adversarial part
+        
+        # Compute Physics Loss
+        thetas = generated_sequences[:, :, 0]  # Extract angle from output
+        physics_loss = compute_pendulum_physics_loss(thetas, g, L, b)
+        
+        # Combined Generator Loss
+        g_loss = adversarial_loss + lambda_param * physics_loss
+        g_optimizer.zero_grad(); g_loss.backward(); g_optimizer.step()
+"""
