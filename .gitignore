@@ -18,3 +18,4 @@ venv/
 tests/__pycache__
 tests/.ipynb_checkpoints
 losses.txt
+SVD/real_tv

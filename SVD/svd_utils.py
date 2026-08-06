@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 
 def read_binary_conf(NX,NT,path):
     """
@@ -49,7 +50,7 @@ def read_and_decompose(blockID,block_x,block_t,params_list):
          )
     
     for tv in range(NV):
-        path = "../real_tv/b{0}_{1}x{1}/{2}/tvector_{1}x{1}_b{0}0000_m{3}_nconf{4}_tv{5}.tv".format(
+        path = "real_tv/b{0}_{1}x{1}/{2}/tvector_{1}x{1}_b{0}0000_m{3}_nconf{4}_tv{5}.tv".format(
             beta, Nx, m0_folder,m0_str, nconf, tv
             )
         test_vector = read_binary_conf(Nx,Nt,path)
@@ -132,12 +133,12 @@ def make_heatmaps(low_rank_tv0, low_rank_tv1, xlims, tlims,metadata,fig_name="",
     ax_meta.axis('off')  # hide axes
 
     # Draw a box with text inside
-    Nx, Nt, beta, m0_diff, blockSize,blockID, krank, Nv = metadata
+    Nx, Nt, beta, m0_diff, blockSize,blockID, krank, Nv, SAP_block_size = metadata
     metadata_text = r"$N_x$={0}, $N_t=${1}, $\beta=${2}, $|m_0-m_c|=${3}".format(Nx, Nt, beta, m0_diff)+\
-    "\nBlocks size = {0}x{0}".format(blockSize) +\
+    "\nBlocks size for SVD = {0}x{0}".format(blockSize) +\
     "\nResults shown for block number {0}".format(blockID) +\
     "\n{0}-rank truncation for a total of {1} test vectors\n".format(krank, Nv) +\
-    "Test vectors were generated with 4 SAP iterations"
+    "Test vectors were generated with 4 SAP iterations with block size {0}".format(SAP_block_size)
     ax_meta.text(
         0.5, 0.5, metadata_text,
         ha='center', va='center',
@@ -188,7 +189,7 @@ def read_and_decompose_v2(blockID,block_x,block_t,params_list):
          )
     
     for tv in range(NV):
-        path = "../real_tv/b{0}_{1}x{1}/{2}/tvector_{1}x{1}_b{0}0000_m{3}_nconf{4}_tv{5}.tv".format(
+        path = "real_tv/b{0}_{1}x{1}/{2}/tvector_{1}x{1}_b{0}0000_m{3}_nconf{4}_tv{5}.tv".format(
             beta, Nx, m0_folder,m0_str, nconf, tv
             )
         test_vector = read_binary_conf(Nx,Nt,path)
@@ -203,3 +204,45 @@ def read_and_decompose_v2(blockID,block_x,block_t,params_list):
     dtv_spin1 =  np.transpose(dtv_spin1.reshape(NV,-1))
     print("Test vectors matrix shape",dtv_spin0.shape)
     return dtv_spin0, dtv_spin1
+
+
+def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=False):
+    # Flatten data to (n_samples, 1)
+    data = np.abs(low_rank_tv[:,:,tvID])
+    X = data.reshape(-1, 1)
+    # K-means
+    kmeans = KMeans(n_clusters=2, random_state=0, n_init=10)
+    labels = kmeans.fit_predict(X)
+    
+    #Sort labels according to value. High value -> label 1, low value -> label 0
+    # Get cluster centers
+    centers = kmeans.cluster_centers_.flatten()
+    # Sort clusters by center value
+    order = np.argsort(centers)  # smallest first
+    # Build mapping: old_label → new_label
+    mapping = {old: new for new, old in enumerate(order)}
+    # Apply mapping
+    labels = np.vectorize(mapping.get)(labels)
+    labels_2d = labels.reshape(data.shape)
+
+    plt.figure(figsize=(10, 4))
+
+    plt.subplot(1, 2, 1)
+    plt.title("Test vector {0}".format(tvID))
+    plt.imshow(data, cmap='viridis', origin='lower')
+    plt.colorbar()
+    
+    plt.subplot(1, 2, 2)
+    plt.title("K-means clusters")
+    plt.imshow(labels_2d, cmap='coolwarm', origin='lower')
+    plt.colorbar(label='Cluster')
+
+    plt.xlabel(r"x")
+    plt.ylabel(r"t")
+    plt.xlim(xlims)
+    plt.ylim(tlims)
+    
+    plt.tight_layout()
+    plt.show()
+    if save==True:
+        fig.savefig(fig_name)
