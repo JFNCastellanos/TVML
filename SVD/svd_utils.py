@@ -236,7 +236,7 @@ def mask_vectors(k_rank,block_x,block_t,params_list):
                 labels_2d = k_cluster(svd_vectors[spin],tvID)
                 for x in range(x_elements):
                     for t in range(t_elements):
-                        svd_vectors[spin][t,x,tvID] = 0 if labels_2d[t,x] == 0 else svd_vectors[spin][t,x,tvID]
+                        svd_vectors[spin][t,x,tvID] *= labels_2d[t,x]
                 test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
     return test_vectors
 
