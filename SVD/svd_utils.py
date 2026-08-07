@@ -20,6 +20,18 @@ def read_binary_conf(NX,NT,path):
     conf[data['mu'], data['t'], data['x']] = data['re'] + 1j * data['im']            
     return conf
 
+def read_vectors(params_list):
+    beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list
+    test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)    
+    for tv in range(NV):
+        path = "real_tv/b{0}_{1}x{1}/{2}/tvector_{1}x{1}_b{0}0000_m{3}_nconf{4}_tv{5}.tv".format(
+            beta, Nx, m0_folder,m0_str, nconf, tv
+            )
+        test_vector = read_binary_conf(Nx,Nt,path)
+        test_vectors[tv] = test_vector
+    #(NV,2,Nx,Nt)
+    return test_vectors
+
 def decomposed_vectors(blockID,block_x,block_t,spin,test_vectors):
     """
     Restrict test vectors to a lattice block
@@ -44,33 +56,22 @@ def decomposed_vectors(blockID,block_x,block_t,spin,test_vectors):
 
 def read_and_decompose(blockID,block_x,block_t,params_list):
     beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list
-    test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)
-    print("beta={0}, conf={1}, Nv={2}, Nx={3}, Nt={4}\nblocks_x={5}, blocks_t={6}, bx_size={7}, bt_size={8}".format
-         (beta,nconf,NV,Nx,Nt,block_x,block_t,Nx//block_x,Nt//block_t)
-         )
-    
-    for tv in range(NV):
-        path = "real_tv/b{0}_{1}x{1}/{2}/tvector_{1}x{1}_b{0}0000_m{3}_nconf{4}_tv{5}.tv".format(
-            beta, Nx, m0_folder,m0_str, nconf, tv
-            )
-        test_vector = read_binary_conf(Nx,Nt,path)
-        #flatten_vector_spin0 = test_vector[0].flatten()
-        test_vectors[tv] = test_vector
-
+    test_vectors = read_vectors(params_list)
     spin = 0
     dtv_spin0 = decomposed_vectors(blockID,block_x,block_t,spin,test_vectors) #[]
     dtv_spin0 =  np.transpose(dtv_spin0.reshape(NV,-1))
     spin = 1
     dtv_spin1 = decomposed_vectors(blockID,block_x,block_t,spin,test_vectors) #[]
     dtv_spin1 =  np.transpose(dtv_spin1.reshape(NV,-1))
-    print("Test vectors matrix shape",dtv_spin0.shape)
+    #print("Test vectors matrix shape",dtv_spin0.shape)
     return dtv_spin0, dtv_spin1
 
-def apply_SVD(tvectors,k_rank):
+def apply_SVD(tvectors,k_rank,printMessage=True):
     U, s, Vh = np.linalg.svd(tvectors, full_matrices=False, compute_uv=True, hermitian=False)
 
     if np.allclose(np.matmul(np.matmul(U,np.diag(s)),Vh),tvectors):
-        print("matrix succesfully reconstructed")
+        if printMessage == True:
+            print("matrix succesfully reconstructed")
     else:
         print("something wrong with the SVD")
         print("U shape",U.shape)
@@ -78,12 +79,13 @@ def apply_SVD(tvectors,k_rank):
         print("Vh shape",Vh.shape)
     #assert k_rank<NV, "k has to be smaller than NV"
     Uk, sk, Vk = U[:,:k_rank], s[:k_rank], Vh[:k_rank,:]
-    print("-------------------")
-    print("Uk shape",Uk.shape)
-    print("sk shape",sk.shape)
-    print("Vk shape",Vk.shape)
     low_rank_tv = np.matmul(np.matmul(Uk,np.diag(sk)),Vk)
-    print("Low rank test vectors shape",low_rank_tv.shape)
+    if printMessage == True:
+        print("-------------------")
+        print("Uk shape",Uk.shape)
+        print("sk shape",sk.shape)
+        print("Vk shape",Vk.shape)
+        print("Low rank test vectors shape",low_rank_tv.shape)
     return low_rank_tv
     
 def make_heatmap(low_rank_tv,xlims,tlims,tvID,fig_name="",save=False):
@@ -182,20 +184,8 @@ def decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors):
     return tvec 
 
 def read_and_decompose_v2(blockID,block_x,block_t,params_list):
-    beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list
-    test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)
-    print("beta={0}, conf={1}, Nv={2}, Nx={3}, Nt={4}\nblocks_x={5}, blocks_t={6}, bx_size={7}, bt_size={8}".format
-         (beta,nconf,NV,Nx,Nt,block_x,block_t,Nx//block_x,Nt//block_t)
-         )
-    
-    for tv in range(NV):
-        path = "real_tv/b{0}_{1}x{1}/{2}/tvector_{1}x{1}_b{0}0000_m{3}_nconf{4}_tv{5}.tv".format(
-            beta, Nx, m0_folder,m0_str, nconf, tv
-            )
-        test_vector = read_binary_conf(Nx,Nt,path)
-        #flatten_vector_spin0 = test_vector[0].flatten()
-        test_vectors[tv] = test_vector
-
+    beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list    
+    test_vectors = read_vectors(params_list)
     spin = 0
     dtv_spin0 = decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors) #[]
     dtv_spin0 =  np.transpose(dtv_spin0.reshape(NV,-1))
@@ -206,7 +196,7 @@ def read_and_decompose_v2(blockID,block_x,block_t,params_list):
     return dtv_spin0, dtv_spin1
 
 
-def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=False):
+def k_cluster(low_rank_tv,tvID):
     # Flatten data to (n_samples, 1)
     data = np.abs(low_rank_tv[:,:,tvID])
     X = data.reshape(-1, 1)
@@ -224,7 +214,12 @@ def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=Fal
     # Apply mapping
     labels = np.vectorize(mapping.get)(labels)
     labels_2d = labels.reshape(data.shape)
+    return labels_2d
+    
 
+def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=False):
+    data = np.abs(low_rank_tv[:,:,tvID])
+    labels_2d = k_cluster(low_rank_tv,tvID)
     plt.figure(figsize=(10, 4))
 
     plt.subplot(1, 2, 1)
@@ -246,3 +241,42 @@ def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=Fal
     plt.show()
     if save==True:
         fig.savefig(fig_name)
+
+def mask_vectors(k_rank,block_x,block_t,params_list):
+    """
+    Inputs: 
+        block_i -> Number of blocks on i for the SVD. 
+                 This should coincide with the number of blocks for the aggregates.
+    returns: 
+        masked test vectors
+    """
+    beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list
+    Nblocks = block_x*block_t
+    x_elements, t_elements = Nx//block_x, Nt//block_t
+    test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)  
+    for blockID in range(Nblocks):
+        dtv_spin0, dtv_spin1 = read_and_decompose(blockID,block_x,block_t,params_list)
+        #Spin component 0
+        low_rank_tv0 = apply_SVD(dtv_spin0,k_rank,False)
+        low_rank_tv0 = low_rank_tv0.reshape(t_elements,x_elements,NV)
+        #Spin component 1
+        low_rank_tv1 = apply_SVD(dtv_spin1,k_rank,False)
+        low_rank_tv1 =low_rank_tv1.reshape(t_elements,x_elements,NV)
+
+        svd_vectors = [low_rank_tv0,low_rank_tv1]
+
+        #----Coordinates of elements inside block----#
+        bx = blockID // block_x
+        bt = blockID % block_t  
+        xini, tini = x_elements * bx, t_elements * bt
+        xfin = xini + x_elements
+        tfin = tini + t_elements
+        #--------------------------------------------#
+        for spin in range(len(svd_vectors)):
+            for tvID in range(NV):
+                labels_2d = k_cluster(svd_vectors[spin],tvID)
+                for x in range(x_elements):
+                    for t in range(t_elements):
+                        svd_vectors[spin][t,x,tvID] = 0 if labels_2d[t,x] == 0 else svd_vectors[spin][t,x,tvID]
+                test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
+    return test_vectors
