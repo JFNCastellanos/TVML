@@ -86,8 +86,9 @@ def apply_SVD(tvectors,k_rank,printMessage=True):
         print("Uk shape",Uk.shape)
         print("sk shape",sk.shape)
         print("Vk shape",Vk.shape)
-        print("Low rank test vectors shape",low_rank_tv.shape)
+        print("Low rank test vectors shape",low_rank_tv.shape)    
     return low_rank_tv
+    #return Uk
     
 def make_heatmap(low_rank_tv,xlims,tlims,tvID,fig_name="",save=False):
     fig, ax = plt.subplots()
