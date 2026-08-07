@@ -1,3 +1,45 @@
+def decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors):
+    """
+    Restrict test vectors over a lattice block
+    """
+    Nv, lalala, Nt, Nx = test_vectors.shape
+    Nblocks =  block_x*block_t
+
+    x_elements = Nx // block_x
+    t_elements = Nt // block_t
+
+    assert blockID < Nblocks, "blockID should be within the range of the number of lattice blocks"
+    #v = np.zeros((dim,Nv*Nblocks),dtype=complex)
+    
+    bx = blockID // block_x
+    bt = blockID % block_t 
+    #----Coordinates of elements inside block----#
+    xini, tini = x_elements * bx, t_elements * bt
+    xfin = xini + x_elements
+    tfin = tini + t_elements
+    #--------------------------------------------#
+    tvec = np.zeros((Nv,Nt,Nx),dtype=complex)
+    for x in range(Nx):
+        for t in range(Nt):
+            if xini<=x<xfin and tini<=t<tfin:
+                tvec[:,t,x] = test_vectors[:,spin,t,x]
+    
+    return tvec 
+
+def read_and_decompose_v2(blockID,block_x,block_t,params_list):
+    beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list    
+    test_vectors = read_vectors(params_list)
+    spin = 0
+    dtv_spin0 = decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors) #[]
+    dtv_spin0 =  np.transpose(dtv_spin0.reshape(NV,-1))
+    spin = 1
+    dtv_spin1 = decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors) #[]
+    dtv_spin1 =  np.transpose(dtv_spin1.reshape(NV,-1))
+    print("Test vectors matrix shape",dtv_spin0.shape)
+    return dtv_spin0, dtv_spin1
+
+
+
 # SVD 2
 * Restrict test vectors and apply SVD, but this time we keep the original dimensions of the vectors and only zero-out those components outside of the domain.
 

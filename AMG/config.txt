@@ -1,8 +1,8 @@
 # Shared application configuration for all three executables
-beta = 6.0
-m0 = -0.0709#-0.18840579710144945 
+beta = 4.0
+m0 = -0.1023#-0.18840579710144945 
 Nv = 30
-number_of_confs = 20
-gauge_conf_dir = /wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs
+number_of_confs = 10
+gauge_conf_dir = ../../confs #/wsgjsc/home/nietocastellanos1/Documents/SchwingerModel/fermions/SchwingerModel/confs
 fake_tv_base_dir = ../../fake_tv
-m_dir = m-0709
+m_dir = m-01023

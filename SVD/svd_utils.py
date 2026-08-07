@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+import struct
 
 def read_binary_conf(NX,NT,path):
     """
@@ -154,48 +155,6 @@ def make_heatmaps(low_rank_tv0, low_rank_tv1, xlims, tlims,metadata,fig_name="",
     if save == True:
         fig.savefig(fig_name)
 
-
-def decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors):
-    """
-    Restrict test vectors over a lattice block
-    """
-    Nv, lalala, Nt, Nx = test_vectors.shape
-    Nblocks =  block_x*block_t
-
-    x_elements = Nx // block_x
-    t_elements = Nt // block_t
-
-    assert blockID < Nblocks, "blockID should be within the range of the number of lattice blocks"
-    #v = np.zeros((dim,Nv*Nblocks),dtype=complex)
-    
-    bx = blockID // block_x
-    bt = blockID % block_t 
-    #----Coordinates of elements inside block----#
-    xini, tini = x_elements * bx, t_elements * bt
-    xfin = xini + x_elements
-    tfin = tini + t_elements
-    #--------------------------------------------#
-    tvec = np.zeros((Nv,Nt,Nx),dtype=complex)
-    for x in range(Nx):
-        for t in range(Nt):
-            if xini<=x<xfin and tini<=t<tfin:
-                tvec[:,t,x] = test_vectors[:,spin,t,x]
-    
-    return tvec 
-
-def read_and_decompose_v2(blockID,block_x,block_t,params_list):
-    beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list    
-    test_vectors = read_vectors(params_list)
-    spin = 0
-    dtv_spin0 = decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors) #[]
-    dtv_spin0 =  np.transpose(dtv_spin0.reshape(NV,-1))
-    spin = 1
-    dtv_spin1 = decomposed_vectors_v2(blockID,block_x,block_t,spin,test_vectors) #[]
-    dtv_spin1 =  np.transpose(dtv_spin1.reshape(NV,-1))
-    print("Test vectors matrix shape",dtv_spin0.shape)
-    return dtv_spin0, dtv_spin1
-
-
 def k_cluster(low_rank_tv,tvID):
     # Flatten data to (n_samples, 1)
     data = np.abs(low_rank_tv[:,:,tvID])
@@ -280,3 +239,23 @@ def mask_vectors(k_rank,block_x,block_t,params_list):
                         svd_vectors[spin][t,x,tvID] = 0 if labels_2d[t,x] == 0 else svd_vectors[spin][t,x,tvID]
                 test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
     return test_vectors
+
+
+def save_vectors(masked_test_vectors,beta,Nx,Nt,m0_folder,nconf,k_rank):
+    """
+    Save masked vectors
+    """
+    dataname = "train" 
+    for tv in range(k_rank):
+        file_path = "../fake_tv/b{0}_{1}x{2}/{3}/{4}/conf{5}_fake_tv{6}.tv".format(beta,Nx,Nt,m0_folder,
+                        dataname,nconf,tv)
+        fmt = "<3i2d"
+        with open(file_path, "wb") as f:
+            for x in range(Nx):
+                for t in range(Nt):
+                    for mu in range(2):
+                        value = masked_test_vectors[tv,mu,t,x]
+                        Re = np.real(value)
+                        Im = np.imag(value)
+                        data = struct.pack(fmt, int(x), int(t), int(mu), float(Re), float(Im))
+                        f.write(data)
