@@ -90,8 +90,8 @@ def apply_SVD(tvectors,k_rank,printMessage=True):
         print("sk shape",sk.shape)
         print("Vk shape",Vk.shape)
         print("Low rank test vectors shape",low_rank_tv.shape)    
-    return low_rank_tv
-    #return Uk
+    #return low_rank_tv
+    return Uk
     
 def make_heatmap(low_rank_tv,xlims,tlims,tvID,fig_name="",save=False):
     fig, ax = plt.subplots()
@@ -216,18 +216,18 @@ def mask_vectors(k_rank,block_x,block_t,params_list):
     beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list
     Nblocks = block_x*block_t
     x_elements, t_elements = Nx//block_x, Nt//block_t
-    #test_vectors = np.zeros((k_rank,2,Nx,Nt),dtype=complex)  
-    test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)  
+    test_vectors = np.zeros((k_rank,2,Nx,Nt),dtype=complex)  
+    #test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)  
     for blockID in range(Nblocks):
         dtv_spin0, dtv_spin1 = read_and_decompose(blockID,block_x,block_t,params_list)
         #Spin component 0
         low_rank_tv0 = apply_SVD(dtv_spin0,k_rank,False)
-        low_rank_tv0 = low_rank_tv0.reshape(t_elements,x_elements,NV)
-        #low_rank_tv0 = low_rank_tv0.reshape(t_elements,x_elements,k_rank)
+        #low_rank_tv0 = low_rank_tv0.reshape(t_elements,x_elements,NV)
+        low_rank_tv0 = low_rank_tv0.reshape(t_elements,x_elements,k_rank)
         #Spin component 1
         low_rank_tv1 = apply_SVD(dtv_spin1,k_rank,False)
-        low_rank_tv1 =low_rank_tv1.reshape(t_elements,x_elements,NV)
-        #low_rank_tv1 =low_rank_tv1.reshape(t_elements,x_elements,k_rank)
+        #low_rank_tv1 =low_rank_tv1.reshape(t_elements,x_elements,NV)
+        low_rank_tv1 =low_rank_tv1.reshape(t_elements,x_elements,k_rank)
 
         svd_vectors = [low_rank_tv0,low_rank_tv1]
 
@@ -239,8 +239,8 @@ def mask_vectors(k_rank,block_x,block_t,params_list):
         tfin = tini + t_elements
         #--------------------------------------------#
         for spin in range(len(svd_vectors)):
-            #for tvID in range(k_rank):
-            for tvID in range(NV):
+            for tvID in range(k_rank):
+            #for tvID in range(NV):
                 labels_2d = k_cluster(svd_vectors[spin],tvID)
                 for x in range(x_elements):
                     for t in range(t_elements):
