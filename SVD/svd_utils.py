@@ -73,14 +73,17 @@ def apply_SVD(tvectors,k_rank,printMessage=True):
     if np.allclose(np.matmul(np.matmul(U,np.diag(s)),Vh),tvectors):
         if printMessage == True:
             print("matrix succesfully reconstructed")
+            print("U shape",U.shape)
+            print("s shape",s.shape)
+            print("Vh shape",Vh.shape)
     else:
         print("something wrong with the SVD")
-        print("U shape",U.shape)
-        print("s shape",s.shape)
-        print("Vh shape",Vh.shape)
+    
     #assert k_rank<NV, "k has to be smaller than NV"
     Uk, sk, Vk = U[:,:k_rank], s[:k_rank], Vh[:k_rank,:]
     low_rank_tv = np.matmul(np.matmul(Uk,np.diag(sk)),Vk)
+    if np.allclose(np.matmul(np.matmul(Uk,np.diag(sk)),Vk),tvectors):
+        print("Test vectors matrix fully reconstructed from {0}-rank vectors".format(k_rank))
     if printMessage == True:
         print("-------------------")
         print("Uk shape",Uk.shape)
@@ -180,7 +183,7 @@ def k_cluster(low_rank_tv,tvID):
 def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=False):
     data = np.abs(low_rank_tv[:,:,tvID])
     labels_2d = k_cluster(low_rank_tv,tvID)
-    plt.figure(figsize=(10, 4))
+    fig = plt.figure(figsize=(10, 4))
 
     plt.subplot(1, 2, 1)
     plt.title("Test vector {0}".format(tvID))
@@ -241,7 +244,7 @@ def mask_vectors(k_rank,block_x,block_t,params_list):
                 labels_2d = k_cluster(svd_vectors[spin],tvID)
                 for x in range(x_elements):
                     for t in range(t_elements):
-                        svd_vectors[spin][t,x,tvID] *= 1 #labels_2d[t,x]
+                        svd_vectors[spin][t,x,tvID] *= labels_2d[t,x]
                 test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
     return test_vectors
 
