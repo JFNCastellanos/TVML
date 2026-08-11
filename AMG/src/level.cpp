@@ -188,7 +188,7 @@ void Level::D_operator(const spinor& v, spinor& out){
 void Level::P_v(const spinor& v,spinor& out){
 	//Loop over columns
 	for(int n = 0; n < Nsites; n++){
-		for(int alf = 0; alf < DOF; alf++){
+		for(int alf = 0; alf < 2*DOF; alf++){
 			out[n][alf] = 0.0; //Initialize the output spinor
 		}
 	}
@@ -196,6 +196,7 @@ void Level::P_v(const spinor& v,spinor& out){
 	int nc, sc,cc; //ncoarse (block), sc (spin coarse), cc (coarse color)
 	int i, j; //Loop indices
 	int a;
+	int mask;
 
 	for (j = 0; j < Ntest*Nagg; j++) {
 		cc = j / Nagg; //Number of test vector
@@ -208,8 +209,15 @@ void Level::P_v(const spinor& v,spinor& out){
 			n = nCoords[Agg[a * sites_per_block * colors + i]];
 			s = sCoords[Agg[a * sites_per_block * colors + i]];
 			c = cCoords[Agg[a * sites_per_block * colors + i]];
-			out[n][2*c + s] += interpolator_columns[cc][n][2*c+s] * v[nc][2*cc+s];//v[k][a];	
-			FLOPS += ca + cm;	
+			for (mask = 0; mask++; mask<2){
+				//mask = 0 -> high freq, mask = 1 -> low freq
+				c_double masked_value = (mask == 0) ? 
+				interpolator_columns[cc][n][2*c+s] * filter_mask[n*2*colors+c*2+s] : 
+				interpolator_columns[cc][n][2*c+s] * (1.0-filter_mask[n*2*colors+c*2+s]);
+
+				out[n][2*(2*c + s) + mask] += masked_value * v[nc][2*(2*cc+s)+mask]; //v[k][a];	
+			}
+				FLOPS += ca + cm;	
 		}
 	}
     

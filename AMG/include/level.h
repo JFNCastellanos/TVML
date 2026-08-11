@@ -128,6 +128,9 @@ public:
         G2 = c_vector(Nsites*2*2*colors*colors*2,0);
         G3 = c_vector(Nsites*2*2*colors*colors*2,0);
 
+        //Mask for the high frequencies of the SVD vectors
+        filter_mask = new double[Nsites * 2 * colors];
+
         if (level == 0){
             makeDirac(); 
         }
@@ -139,6 +142,7 @@ public:
         delete[] nCoords;
         delete[] sCoords;
         delete[] cCoords;
+        delete[] filter_mask;
     }
 
     std::vector<spinor> test_vectors; //[Ntest][Nsites][degrees of freedom per site]
@@ -219,6 +223,7 @@ public:
     int* Agg;
 
     int* nCoords; int* sCoords; int* cCoords;
+    double* filter_mask;
     
     std::vector<std::vector<int>> LatticeBlocks;
 
