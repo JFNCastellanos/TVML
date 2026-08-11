@@ -186,7 +186,7 @@ def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=Fal
     fig = plt.figure(figsize=(10, 4))
 
     plt.subplot(1, 2, 1)
-    plt.title("Test vector {0}".format(tvID))
+    plt.title("Left singular vector {0}".format(tvID))
     plt.imshow(data, cmap='viridis', origin='lower')
     plt.colorbar()
     
@@ -205,6 +205,44 @@ def make_heatmap_and_k_cluster(low_rank_tv,xlims,tlims,tvID,fig_name="",save=Fal
     if save==True:
         fig.savefig(fig_name)
 
+def svd_vectors_full_range(k_rank,block_x,block_t,params_list):
+    """
+    Inputs: 
+        block_i -> Number of blocks on i for the SVD. 
+                 This should coincide with the number of blocks for the aggregates.
+    returns: 
+        left singular vectors across the whole lattice
+     """
+    beta, m0_str, m0_folder, nconf, NV, Nx, Nt = params_list
+    Nblocks = block_x*block_t
+    x_elements, t_elements = Nx//block_x, Nt//block_t
+    test_vectors = np.zeros((k_rank,2,Nx,Nt),dtype=complex)  
+    #test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)  
+    for blockID in range(Nblocks):
+        dtv_spin0, dtv_spin1 = read_and_decompose(blockID,block_x,block_t,params_list)
+        #Spin component 0
+        low_rank_tv0 = apply_SVD(dtv_spin0,k_rank,False)
+        #low_rank_tv0 = low_rank_tv0.reshape(t_elements,x_elements,NV)
+        low_rank_tv0 = low_rank_tv0.reshape(t_elements,x_elements,k_rank)
+        #Spin component 1
+        low_rank_tv1 = apply_SVD(dtv_spin1,k_rank,False)
+        #low_rank_tv1 =low_rank_tv1.reshape(t_elements,x_elements,NV)
+        low_rank_tv1 =low_rank_tv1.reshape(t_elements,x_elements,k_rank)
+
+        svd_vectors = [low_rank_tv0,low_rank_tv1]
+
+        #----Coordinates of elements inside block----#
+        bx = blockID // block_x
+        bt = blockID % block_t  
+        xini, tini = x_elements * bx, t_elements * bt
+        xfin = xini + x_elements
+        tfin = tini + t_elements
+        #--------------------------------------------#
+        for spin in range(len(svd_vectors)):
+            for tvID in range(k_rank):
+                test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
+    return test_vectors
+        
 def mask_vectors(k_rank,block_x,block_t,params_list):
     """
     Inputs: 
