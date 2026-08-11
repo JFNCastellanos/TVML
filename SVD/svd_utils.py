@@ -243,11 +243,16 @@ def svd_vectors_full_range(k_rank,block_x,block_t,params_list):
                 test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
     return test_vectors
         
-def mask_vectors(k_rank,block_x,block_t,params_list):
+def mask_vectors(k_rank,block_x,block_t,which_mask,params_list):
     """
     Inputs: 
         block_i -> Number of blocks on i for the SVD. 
                  This should coincide with the number of blocks for the aggregates.
+        k_rank -> SVD rank-k approximation
+        which_mask --> which mask to use.
+                    0: keep high frequencies
+                    1: keep low frequencies
+                    any other value: doesn't apply a mask
     returns: 
         masked test vectors
     """
@@ -282,19 +287,33 @@ def mask_vectors(k_rank,block_x,block_t,params_list):
                 labels_2d = k_cluster(svd_vectors[spin],tvID)
                 for x in range(x_elements):
                     for t in range(t_elements):
-                        svd_vectors[spin][t,x,tvID] *= labels_2d[t,x]
+                        if which_mask == 0:
+                            svd_vectors[spin][t,x,tvID] *= labels_2d[t,x]
+                        elif which_mask == 1:
+                            svd_vectors[spin][t,x,tvID] *= (1-labels_2d[t,x])
+                        else:
+                             svd_vectors[spin][t,x,tvID] *= 1 #no mask 
                 test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
     return test_vectors
 
 
-def save_vectors(masked_test_vectors,beta,Nx,Nt,m0_folder,nconf,k_rank):
+def save_vectors(masked_test_vectors,beta,Nx,Nt,m0_folder,nconf,k_rank,which_mask):
     """
     Save masked vectors
+    which_mask --> which mask to use.
+                0: keep high frequencies
+                1: keep low frequencies
+                any other value: doesn't apply a mask
     """
     dataname = "train" 
     for tv in range(k_rank):
-        file_path = "../fake_tv/b{0}_{1}x{2}/{3}/{4}/conf{5}_fake_tv{6}.tv".format(beta,Nx,Nt,m0_folder,
+        if which_mask == 0:
+            file_path = "../fake_tv/b{0}_{1}x{2}/{3}/{4}/conf{5}_fake_tv{6}.tv".format(beta,Nx,Nt,m0_folder,
                         dataname,nconf,tv)
+        elif which_mask == 1:
+            file_path = "../fake_tv/b{0}_{1}x{2}/{3}/{4}/conf{5}_fake_tv{6}.tv".format(beta,Nx,Nt,m0_folder,
+                        dataname,nconf,k_rank+tv)
+            
         fmt = "<3i2d"
         with open(file_path, "wb") as f:
             for x in range(Nx):
