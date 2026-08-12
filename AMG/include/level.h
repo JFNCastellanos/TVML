@@ -129,8 +129,8 @@ public:
         G3 = c_vector(Nsites*2*2*colors*colors*2,0);
 
         //Mask for the high frequencies of the SVD vectors
-        filter_mask = new double[Nsites * 2 * colors];
-
+        filter_mask = std::vector<std::vector<double>> (Ntest, std::vector<double>(Nsites * 2 * colors,0));
+  
         if (level == 0){
             makeDirac(); 
         }
@@ -142,11 +142,11 @@ public:
         delete[] nCoords;
         delete[] sCoords;
         delete[] cCoords;
-        delete[] filter_mask;
     }
 
     std::vector<spinor> test_vectors; //[Ntest][Nsites][degrees of freedom per site]
     std::vector<spinor> interpolator_columns;
+    std::vector<std::vector<double>> filter_mask;
 //private:
     const int level; 
     const int x_elements = (level != LevelV::maxLevel) ?  LevelV::NxSites[level] / LevelV::BlocksX[level]: 1;
@@ -158,6 +158,7 @@ public:
     const int Ntest = (level != LevelV::maxLevel) ? LevelV::Ntest[level]: 1;     //Number of test vectors to go to the next level
     const int Nagg = (level != LevelV::maxLevel) ? LevelV::Nagg[level]: 1;       //Number of aggregates to go to the next level
     const int DOF = LevelV::DOF[level];         //Degrees of freedom at each lattice site at this level
+    const int n_mask = (level==0) ? 1 : 2;      //Number of masks. For the fine grid we don't have a mask, for the coarse grid we do.
     int Ntsites = LevelV::NtSites[level];       //Number of time sites at this level
     int Nxsites = LevelV::NxSites[level];       //Number of space sites at this level
     const c_matrix U; //gauge configuration
@@ -171,43 +172,43 @@ public:
     //Index functions for gauge links. These correspond to the current level
 	//get index for A_coeff 1D array
     //[A(x)]^{alf,bet}_{c,b} --> A_coeff[x][alf][bet][c][b]
-	inline int getG1index(const int& x, const int& alf, const int& bet, const int& c, const int& b){
-		return x * 2 * 2 * colors * colors 
+	inline int getG1index(const int& x, const int& alf, const int& bet, const int& c, const int& b, const int& mask){
+		return (x * 2 * 2 * colors * colors 
         + alf * 2 * colors * colors 
         + bet * colors * colors
         + c * colors 
-        + b;
+        + b)*n_mask+mask;
 	}
 	//[B_mu(x)]^{alf,bet}_{c,b}  --> B_coeff[x][alf][bet][c][b][mu]
     //[C_mu(x)]^{alf,bet}_{c,b}  --> C_coeff[x][alf][bet][c][b][mu]
-	inline int getG2G3index(const int& x, const int& alf, const int& bet, const int& c, const int& b, const int& mu){
-        return x * 2 * 2 * colors * colors * 2 
+	inline int getG2G3index(const int& x, const int& alf, const int& bet, const int& c, const int& b, const int& mu, const int& mask){
+        return (x * 2 * 2 * colors * colors * 2 
         + alf * 2 * colors * colors * 2 
         + bet * colors * colors * 2
         + c * colors * 2 
         + b * 2 
-        + mu;
+        + mu)*n_mask+mask;
     }
     	
     //Index functions for coarse gauge links. These correspond to the next level, but are generated here (not stored)
 	//get index for A_coeff 1D array
     //[A(x)]^{alf,bet}_{c,b} --> A_coeff[x][alf][bet][c][b]
-	inline int getAindex(const int& block, const int& alf, const int& bet, const int& c, const int& b){
-		return block * 2 * 2 * Ntest * Ntest 
+	inline int getAindex(const int& block, const int& alf, const int& bet, const int& c, const int& b, const int& mask){
+		return (block * 2 * 2 * Ntest * Ntest 
         + alf * 2 * Ntest * Ntest 
         + bet * Ntest * Ntest
         + c * Ntest 
-        + b;
+        + b)*2 + mask;
 	}
 	//[B_mu(x)]^{alf,bet}_{c,b}  --> B_coeff[x][alf][bet][c][b][mu]
     //[C_mu(x)]^{alf,bet}_{c,b}  --> C_coeff[x][alf][bet][c][b][mu]
-	inline int getBCindex(const int& block, const int& alf, const int& bet, const int& c, const int& b, const int& mu){
-        return block * 2 * 2 * Ntest * Ntest * 2 
+	inline int getBCindex(const int& block, const int& alf, const int& bet, const int& c, const int& b, const int& mu,const int& mask){
+        return (block * 2 * 2 * Ntest * Ntest * 2 
         + alf * 2 * Ntest * Ntest * 2 
         + bet * Ntest * Ntest * 2
         + c * Ntest * 2 
         + b * 2 
-        + mu;
+        + mu)*2 + mask;
     }
 
     /*
@@ -223,7 +224,6 @@ public:
     int* Agg;
 
     int* nCoords; int* sCoords; int* cCoords;
-    double* filter_mask;
     
     std::vector<std::vector<int>> LatticeBlocks;
 

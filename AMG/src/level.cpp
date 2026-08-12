@@ -166,17 +166,20 @@ void Level::D_operator(const spinor& v, spinor& out){
 	for(int x = 0; x<Nsites;x++){
 	for(int alf = 0; alf<2; alf++){
 	for(int c = 0; c<colors; c++){
-		out[x][2*c+alf] = (mass::m0+2)*v[x][2*c+alf];
+	for(int mask=0; mask<n_mask; mask++){
+		out[x][n_mask*(2*c+alf)+mask] = (mass::m0+2)*v[x][n_mask*(2*c+alf)+mask];
 		FLOPS += da+dcm;
 	for(int bet = 0; bet<2; bet++){
 	for(int b = 0; b<colors; b++){
-		out[x][2*c+alf] -= G1[getG1index(x,alf,bet,c,b)] * v[x][2*b+bet];
+	
+		out[x][n_mask*(2*c+alf)+mask] -= G1[getG1index(x,alf,bet,c,b,mask)] * v[x][n_mask*(2*b+bet)+mask];
 		FLOPS += ca + cm;
 		for(int mu:{0,1}){
-			out[x][2*c+alf] -= ( G2[getG2G3index(x,alf,bet,c,b,mu)] * SignR_l[level][x][mu] * v[RightPB_l[level][x][mu]][2*b+bet]
-							+ G3[getG2G3index(x,alf,bet,c,b,mu)] * SignL_l[level][x][mu] * v[LeftPB_l[level][x][mu]][2*b+bet] );
+			out[x][n_mask*(2*c+alf)+mask] -= ( G2[getG2G3index(x,alf,bet,c,b,mu,mask)] * SignR_l[level][x][mu] * v[RightPB_l[level][x][mu]][n_mask*(2*b+bet)+mask]
+							+ G3[getG2G3index(x,alf,bet,c,b,mu,mask)] * SignL_l[level][x][mu] * v[LeftPB_l[level][x][mu]][n_mask*(2*b+bet)+mask] );
 			FLOPS += ca + ca + 4*cm;
 		}
+	}
 	}
 	}
 	}
@@ -188,7 +191,7 @@ void Level::D_operator(const spinor& v, spinor& out){
 void Level::P_v(const spinor& v,spinor& out){
 	//Loop over columns
 	for(int n = 0; n < Nsites; n++){
-		for(int alf = 0; alf < 2*DOF; alf++){
+		for(int alf = 0; alf < DOF; alf++){
 			out[n][alf] = 0.0; //Initialize the output spinor
 		}
 	}
@@ -212,12 +215,12 @@ void Level::P_v(const spinor& v,spinor& out){
 			for (mask = 0; mask++; mask<2){
 				//mask = 0 -> high freq, mask = 1 -> low freq
 				c_double masked_value = (mask == 0) ? 
-				interpolator_columns[cc][n][2*c+s] * filter_mask[n*2*colors+c*2+s] : 
-				interpolator_columns[cc][n][2*c+s] * (1.0-filter_mask[n*2*colors+c*2+s]);
+				interpolator_columns[cc][n][2*c+s] * filter_mask[cc][n*2*colors+c*2+s] : 
+				interpolator_columns[cc][n][2*c+s] * (1.0-filter_mask[cc][n*2*colors+c*2+s]);
 
-				out[n][2*(2*c + s) + mask] += masked_value * v[nc][2*(2*cc+s)+mask]; //v[k][a];	
-			}
+				out[n][(2*c + s)] += masked_value * v[nc][2*(2*cc+s)+mask]; //v[k][a];	
 				FLOPS += ca + cm;	
+			}		
 		}
 	}
     
@@ -227,7 +230,7 @@ void Level::P_v(const spinor& v,spinor& out){
 void Level::Pt_v(const spinor& v,spinor& out) {
 	//Restriction operator times a spinor
 	for(int n = 0; n < NBlocks; n++){
-		for(int alf = 0; alf < 2*Ntest; alf++){
+		for(int alf = 0; alf < 2*2*Ntest; alf++){
 			out[n][alf] = 0.0; //Initialize the output spinor
 		}
 	}
@@ -236,6 +239,7 @@ void Level::Pt_v(const spinor& v,spinor& out) {
 	int i, j; //Loop indices
 	int a; //Aggregate
 	int var; 
+	int mask;
 
 	for (i = 0; i < Ntest*Nagg; i++) {	
 		cc = i / Nagg; //Number of test vector
@@ -245,8 +249,14 @@ void Level::Pt_v(const spinor& v,spinor& out) {
 			//Agg[a * sites_per_block * Colors + j], j from 0 to LevelV::Colors[level] * x_elements * t_elements - 1
 			var = Agg[a * sites_per_block * colors + j]; 
 			n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
-			out[nc][2*cc+s] += std::conj(interpolator_columns[cc][n][2*c+s]) * v[n][2*c+s];
-			FLOPS += ca + cm;
+			for (mask = 0; mask++; mask<2){
+				//mask = 0 -> high freq, mask = 1 -> low freq
+				c_double masked_value = (mask == 0) ? 
+				std::conj(interpolator_columns[cc][n][2*c+s]) * filter_mask[cc][n*2*colors+c*2+s] : 
+				std::conj(interpolator_columns[cc][n][2*c+s]) * (1.0-filter_mask[cc][n*2*colors+c*2+s]);
+				out[nc][2*(2*cc+s)+mask] += masked_value * v[n][(2*c+s)];
+				FLOPS += ca + cm;	
+			}
 		}
 	}
 
@@ -272,9 +282,10 @@ void Level::makeCoarseLinks(Level& next_level){
 	for(int bet=0; bet<2;bet++){
 	for(int p = 0; p<Ntest; p++){
 	for(int s = 0; s<Ntest; s++){
-		indxA = getAindex(x,alf,bet,p,s); //Indices for the next level
-		indxBC[0] = getBCindex(x,alf,bet,p,s,0);
-		indxBC[1] = getBCindex(x,alf,bet,p,s,1);
+	for(int mask = 0; mask<2; mask++){
+		indxA = getAindex(x,alf,bet,p,s,mask); //Indices for the next level
+		indxBC[0] = getBCindex(x,alf,bet,p,s,0,mask);
+		indxBC[1] = getBCindex(x,alf,bet,p,s,1,mask);
 		A_coeff[indxA] = 0;
 		B_coeff[indxBC[0]] = 0; B_coeff[indxBC[1]] = 0;
 		C_coeff[indxBC[0]] = 0; C_coeff[indxBC[1]] = 0;
@@ -283,33 +294,55 @@ void Level::makeCoarseLinks(Level& next_level){
 			for(int b = 0; b<colors; b++){
 			
 				//[w*_p^(block,alf)]_{c,alf}(x) [A(x)]^{alf,bet}_{c,b} [w_s^{block,bet}]_{b,bet}(x)
-			A_coeff[indxA] += std::conj(w[p][n][2*c+alf]) * G1[getG1index(n,alf,bet,c,b)] * w[s][n][2*b+bet];
+				c_double masked_value_A_left = (mask == 0) ? 
+				std::conj(w[p][n][2*c+alf]) * filter_mask[p][n*2*colors+c*2+alf] : 
+				std::conj(w[p][n][2*c+alf]) * (1.0-filter_mask[p][n*2*colors+c*2+alf]);
+				
+				c_double masked_value_A_right = (mask == 0) ? 
+				w[s][n][2*b+bet] * filter_mask[p][n*2*colors+b*2+bet] : 
+				w[s][n][2*b+bet] * (1.0-filter_mask[p][n*2*colors+b*2+bet]);
+
+			//A_coeff[indxA] += std::conj(w[p][n][2*c+alf]) * G1[getG1index(n,alf,bet,c,b)] * w[s][n][2*b+bet];
+			A_coeff[indxA] += masked_value_A_left * G1[getG1index(n,alf,bet,c,b,0)] * masked_value_A_right;
 			FLOPS += ca + cm*2;
 			for(int mu : {0,1}){
 				getLatticeBlock(RightPB_l[level][n][mu], block_r); //block_r: block where RightPB_l[n][mu] lives
 				getLatticeBlock(LeftPB_l[level][n][mu], block_l); //block_l: block where LeftPB_l[n][mu] lives
-				wG2 = std::conj(w[p][n][2*c+alf]) * G2[getG2G3index(n,alf,bet,c,b,mu)]; 
-				wG3 = std::conj(w[p][n][2*c+alf]) * G3[getG2G3index(n,alf,bet,c,b,mu)];
+
+				c_double masked_w = (mask == 0) ? 
+				std::conj(w[p][n][2*c+alf]) * filter_mask[p][n*2*colors+c*2+alf]: 
+				std::conj(w[p][n][2*c+alf]) * (1.0-filter_mask[p][n*2*colors+c*2+alf]);
+
+				wG2 = masked_w * G2[getG2G3index(n,alf,bet,c,b,mu,0)]; 
+				wG3 = masked_w * G3[getG2G3index(n,alf,bet,c,b,mu,0)];
 				FLOPS += cm*2;
+
+				c_double masked_wr = (mask == 0) ? 
+				w[s][RightPB_l[level][n][mu]][2*b+bet] * filter_mask[s][n*2*colors+b*2+bet]: 
+				w[s][RightPB_l[level][n][mu]][2*b+bet] * (1.0-filter_mask[s][n*2*colors+b*2+bet]);
+
+				c_double masked_wl = (mask == 0) ? 
+				w[s][LeftPB_l[level][n][mu]][2*b+bet] * filter_mask[s][n*2*colors+b*2+bet]: 
+				w[s][LeftPB_l[level][n][mu]][2*b+bet] * (1.0-filter_mask[s][n*2*colors+b*2+bet]);
 				
 				//Only diff from zero when n+hat{mu} in Block(x)
 				if (block_r == x){
-					A_coeff[indxA] += wG2 * w[s][RightPB_l[level][n][mu]][2*b+bet];// * SignR_l[level][n][mu];
+					A_coeff[indxA] += wG2 * masked_wr;// * SignR_l[level][n][mu];
 					FLOPS += ca+cm;
 				}
 				//Only diff from zero when n+hat{mu} in Block(x+hat{mu})
 				else if (block_r == RightPB_l[level+1][x][mu]){
-					B_coeff[indxBC[mu]] += wG2 * w[s][RightPB_l[level][n][mu]][2*b+bet]; //Sign considered in the operator
+					B_coeff[indxBC[mu]] += wG2 * masked_wr; //Sign considered in the operator
 					FLOPS += ca+cm;
 				}
 				//Only diff from zero when n-hat{mu} in Block(x)
 				if (block_l == x){
-					A_coeff[indxA] += wG3 * w[s][LeftPB_l[level][n][mu]][2*b+bet];// *  SignL_l[level][n][mu];
+					A_coeff[indxA] += wG3 * masked_wl;// *  SignL_l[level][n][mu];
 					FLOPS += ca+cm;
 				}
 				//Only diff from zero when n-hat{mu} in Block(x-hat{mu})
 				else if (block_l == LeftPB_l[level+1][x][mu]){
-					C_coeff[indxBC[mu]] += wG3 * w[s][LeftPB_l[level][n][mu]][2*b+bet];
+					C_coeff[indxBC[mu]] += wG3 * masked_wl;
 					FLOPS += ca+cm;
 				}
 	
@@ -318,6 +351,7 @@ void Level::makeCoarseLinks(Level& next_level){
 			}
 		}
 	//---------Close loops---------//
+	} //mask indx
 	} //s
 	} //p
 	} //bet
@@ -376,12 +410,12 @@ void Level::SAP_level_l::D_local(const spinor& in, spinor& out, const int& block
 				FLOPS += da + dcm;
 			for(int bet = 0; bet<2; bet++){
 			for(int b = 0; b<colors; b++){
-				out[x][2*c+alf] -= parent->G1[parent->getG1index(n,alf,bet,c,b)] * in[x][2*b+bet];
+				out[x][2*c+alf] -= parent->G1[parent->getG1index(n,alf,bet,c,b,0)] * in[x][2*b+bet];
 				FLOPS += ca+cm;
 				for(int mu:{0,1}){
 					out[x][2*c+alf] -= 
-						( parent->G2[parent->getG2G3index(n,alf,bet,c,b,mu)] * SignR_l[parent->level][n][mu] * phi_RPB[mu][2*b+bet]
-						+ parent->G3[parent->getG2G3index(n,alf,bet,c,b,mu)] * SignL_l[parent->level][n][mu] * phi_LPB[mu][2*b+bet]
+						( parent->G2[parent->getG2G3index(n,alf,bet,c,b,mu,0)] * SignR_l[parent->level][n][mu] * phi_RPB[mu][2*b+bet]
+						+ parent->G3[parent->getG2G3index(n,alf,bet,c,b,mu,0)] * SignL_l[parent->level][n][mu] * phi_LPB[mu][2*b+bet]
 						);
 					FLOPS += ca+ca+4*cm;
 				}
