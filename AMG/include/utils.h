@@ -83,6 +83,8 @@ inline void readConfsID(std::vector<int>& confsID,std::string name){
 	}
     
     infile.close();
+
+    std::cout << "mask file read" << std::endl;
 }
 
 
