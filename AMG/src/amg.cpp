@@ -95,6 +95,7 @@ void AlgebraicMG::setUpPhase(const int& Nit){
 			levels[l]->readTv(); 
 			//	checkTv(levels[l]->interpolator_columns,l,0);
 			std::cout << "reading test vectors from files " << std::endl;
+			levels[l]->readMask();
 			levels[l]->orthonormalize(); 
 			levels[l]->makeCoarseLinks(*levels[l+1]);
 		}

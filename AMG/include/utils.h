@@ -31,7 +31,7 @@
     
     infile.close();
 }
-      
+     
 inline void checkTv(std::vector<spinor>& test_vectors,const int level,const int tv){
     //Check that test vectors here coincide with what I generated in Python
     int n;
@@ -57,6 +57,31 @@ inline void readConfsID(std::vector<int>& confsID,std::string name){
     while (infile >> ID ) {
         confsID.push_back(ID); 
     }
+    infile.close();
+}
+
+
+ inline void readBinaryMask(const std::string& name,std::vector<std::vector<double>>& mask,const int tv,const int level){
+    /*
+    We read a file with a mask for level l
+    */
+    std::ifstream infile(name, std::ios::binary);
+    if (!infile) {
+        std::cerr << "File " << name << " not found " << std::endl;
+        exit(1);
+    }
+    
+    int n;
+    int x, t, mu;
+    double re;
+	for (int i = 0; i < LevelV::Nsites[level] * 2; i++) {
+        infile.read(reinterpret_cast<char*>(&x), sizeof(int));
+        infile.read(reinterpret_cast<char*>(&t), sizeof(int));
+        infile.read(reinterpret_cast<char*>(&mu), sizeof(int)); //In case that I include the color I have to modify this
+        infile.read(reinterpret_cast<char*>(&re), sizeof(double));
+		mask[tv][(x * LevelV::NtSites[level] + t)*2+mu] = re;
+	}
+    
     infile.close();
 }
 

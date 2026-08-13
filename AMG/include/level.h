@@ -169,6 +169,8 @@ public:
     c_vector G2; 
     c_vector G3; 
 
+
+    void readMask();
     //Index functions for gauge links. These correspond to the current level
 	//get index for A_coeff 1D array
     //[A(x)]^{alf,bet}_{c,b} --> A_coeff[x][alf][bet][c][b]

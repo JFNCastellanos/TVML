@@ -16,6 +16,7 @@ struct AppConfig {
     std::string gauge_conf_dir;
     std::string fake_tv_base_dir;
     std::string m_dir;
+    std::string mask_dir;
 };
 
 extern AppConfig globalAppConfig;
@@ -101,6 +102,8 @@ inline AppConfig readAppConfig(const std::string& filename) {
             config.fake_tv_base_dir = value;
         } else if (key == "m_dir") {
             config.m_dir = value;
+        } else if (key == "mask_dir") {
+            config.mask_dir = value;
         } else {
             std::cerr << filename << ":" << line_no << ": unknown config key '" << key << "'" << std::endl;
             exit(1);
@@ -117,6 +120,10 @@ inline AppConfig readAppConfig(const std::string& filename) {
     }
     if (config.m_dir.empty()) {
         std::cerr << filename << ": required key 'm_dir' missing" << std::endl;
+        exit(1);
+    }
+    if (config.mask_dir.empty()) {
+        std::cerr << filename << ": required key 'mask_dir' missing" << std::endl;
         exit(1);
     }
 

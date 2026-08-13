@@ -109,13 +109,13 @@ void Level::makeDirac(){
 	for(int bet=0; bet<2;bet++){
 	for(int c = 0; c<colors; c++){
 	for(int b = 0; b<colors; b++){
-		G1[getG1index(x,alf,bet,c,b)] = 0;//This coefficient is not used at level 0
-		G2[getG2G3index(x,alf,bet,c,b,0)] = 0; G2[getG2G3index(x,alf,bet,c,b,1)] = 0;
-		G3[getG2G3index(x,alf,bet,c,b,0)] = 0; G3[getG2G3index(x,alf,bet,c,b,1)] = 0;
+		G1[getG1index(x,alf,bet,c,b,0)] = 0;  //This coefficient is not used at level 0
+		G2[getG2G3index(x,alf,bet,c,b,0,0)] = 0; G2[getG2G3index(x,alf,bet,c,b,1,0)] = 0;
+		G3[getG2G3index(x,alf,bet,c,b,0,0)] = 0; G3[getG2G3index(x,alf,bet,c,b,1,0)] = 0;
 		//For level = 0 
 		for(int mu : {0,1}){
-			G2[getG2G3index(x,alf,bet,c,b,mu)] = 0.5 * M[mu][alf][bet] * U[x][mu];
-			G3[getG2G3index(x,alf,bet,c,b,mu)] = 0.5 * P[mu][alf][bet] * std::conj(U[LeftPB_l[level][x][mu]][mu]);
+			G2[getG2G3index(x,alf,bet,c,b,mu,0)] = 0.5 * M[mu][alf][bet] * U[x][mu];
+			G3[getG2G3index(x,alf,bet,c,b,mu,0)] = 0.5 * P[mu][alf][bet] * std::conj(U[LeftPB_l[level][x][mu]][mu]);
 			FLOPS += (dcm + cm)*2;
 		}
 		
@@ -439,7 +439,7 @@ void Level::orthonormalize(){
 	//Each column is orthonormalized with respect to the others that belong to the same aggregate.
 	//This follows the steps from Section 3.1 of A. Frommer et al "Adaptive Aggregation-Based Domain Decomposition 
 	//Multigrid for the Lattice Wilson-Dirac Operator", SIAM, 36 (2014).
-	spinor e_i(NBlocks, c_vector(2*Ntest,0));
+	//spinor e_i(NBlocks, c_vector(2*Ntest,0));
 	int n, s, c; //block, spin and color
 	int var;
 	//Orthonormalization by applying Gram-Schmidt
@@ -447,6 +447,7 @@ void Level::orthonormalize(){
 	c_double norm;
 	//Looping over the aggregates
 	for (int a = 0; a < Nagg; a++) {
+	for(int mask = 0; mask < 2; mask++)
 		//Looping over the test vectors
 		for (int nt = 0; nt < Ntest; nt++) {
 			for (int ntt = 0; ntt < nt; ntt++) {
@@ -454,14 +455,18 @@ void Level::orthonormalize(){
 				for (int j = 0; j < colors * x_elements * t_elements; j++) {
 					var = Agg[a * sites_per_block * colors + j]; 
 					n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
-					proj += interpolator_columns[nt][n][2*c+s] * std::conj(interpolator_columns[ntt][n][2*c+s]);
-					FLOPS += ca+cm;
+					if (filter_mask[nt][n*2*colors+c*2+s] == filter_mask[ntt][n*2*colors+c*2+s]){
+						proj += interpolator_columns[nt][n][2*c+s] * std::conj(interpolator_columns[ntt][n][2*c+s]);
+						FLOPS += ca+cm;
+					}
 				}
 				for (int j = 0; j < colors * x_elements * t_elements; j++) {
 					var = Agg[a * sites_per_block * colors + j]; 
 					n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
-					interpolator_columns[nt][n][2*c+s] -= proj * interpolator_columns[ntt][n][2*c+s];
-					FLOPS += ca+cm;
+					if (filter_mask[nt][n*2*colors+c*2+s] == filter_mask[ntt][n*2*colors+c*2+s]){
+						interpolator_columns[nt][n][2*c+s] -= proj * interpolator_columns[ntt][n][2*c+s];
+						FLOPS += ca+cm;
+					}
 				}
 			}
 			//normalize
@@ -469,8 +474,8 @@ void Level::orthonormalize(){
 			for (int j = 0; j < colors * x_elements * t_elements; j++) {
 				var = Agg[a * sites_per_block * colors + j]; 
 				n = nCoords[var]; s = sCoords[var]; c = cCoords[var];
-				norm += interpolator_columns[nt][n][2*c+s] * std::conj(interpolator_columns[nt][n][2*c+s]);
-				FLOPS += ca+cm;
+					norm += interpolator_columns[nt][n][2*c+s] * std::conj(interpolator_columns[nt][n][2*c+s]);
+					FLOPS += ca+cm;			
 			}
 			norm = sqrt(std::real(norm)) + 0.0*c_double(0,1); 
 			FLOPS += dsq;
@@ -502,4 +507,18 @@ void Level::readTv(){
 
         readBinaryTv(tv_file.str(),interpolator_columns,tvID,level);
     }
+}
+
+
+void Level::readMask(){
+	const AppConfig& config = getAppConfig();
+	for(int nt=0; nt<Ntest; nt++){
+		std::ostringstream mask_file;
+		mask_file << config.mask_dir << "/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
+                    << "/" << config.m_dir << "/"
+                    << mlearning::confID << "_mask_tv" << nt << ".tv";
+		std::vector<spinor>mask(Ntest,
+        spinor( Nsites, c_vector (DOF,0))); 
+		readBinaryMask(mask_file.str(),filter_mask,nt,level);			
+	}
 }
