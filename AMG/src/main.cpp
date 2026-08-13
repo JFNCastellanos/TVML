@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
         spinor xFAMG(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
         spinor xFAMGRandom(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
         spinor xFAMGSetup2(LevelV::Nsites[0],c_vector(LevelV::DOF[0],0));
-        
+        int setup;
 
         std::cout << "/////////////// Testing with confID " << mlearning::confID << "///////////////" << std::endl;
     
@@ -112,27 +112,29 @@ int main(int argc, char **argv) {
         //test.BiCG(x_bi, 10000,true); //BiCGstab for comparison  
         //test.CG(x_cg); //Conjugate Gradient for inverting the normal equations
         AMGV::SAP_test_vectors_iterations = SAP_test_vec_iter;
-        std::cout << "Smoothing test vectors with " << AMGV::SAP_test_vectors_iterations << " SAP iterations" << std::endl;
-        int setup = 0;  //Usual set up (smoothing test vectors)
-        smooth_tv_amg_iter[id] = test.fgmresAMG(xFAMG, true,setup);
+        //std::cout << "Smoothing test vectors with " << AMGV::SAP_test_vectors_iterations << " SAP iterations" << std::endl;
+        //setup = 0;  //Usual set up (smoothing test vectors)
+        //smooth_tv_amg_iter[id] = test.fgmresAMG(xFAMG, true,setup);
     
-        std::cout << "Random test vectors " << std::endl;
-        AMGV::SAP_test_vectors_iterations = 0;
-        random_tv_amg_iter[id] = test.fgmresAMG(xFAMGRandom, true,setup);
+        //std::cout << "Random test vectors " << std::endl;
+        //AMGV::SAP_test_vectors_iterations = 0;
+        //random_tv_amg_iter[id] = test.fgmresAMG(xFAMGRandom, true,setup);
 
-        std::cout << "********************************************************************" << std::endl;
+        //std::cout << "********************************************************************" << std::endl;
         std::cout << " Reading test vectors from file " << std::endl;
    
         setup = 1; //machine learning generated test vectors
-        learned_tv_amg_iter[id] = test.fgmresAMG(xFAMGSetup2, true,setup);
+        //learned_tv_amg_iter[id] = test.fgmresAMG(xFAMGSetup2, true,setup);
+
+        test.multigrid(xFAMGSetup2,true);
    
     
     }
 
     std::cout << "beta " << beta << "  m0  " << m0 << std::endl;
-    std::cout << "Mean iteration count for smoothed test vectors " << mean(smooth_tv_amg_iter) << " +- " << standard_deviation(smooth_tv_amg_iter) << std::endl;
-    std::cout << "Mean iteration count for random test vectors   " << mean(random_tv_amg_iter) << " +- " << standard_deviation(random_tv_amg_iter) << std::endl;
-    std::cout << "Mean iteration count for learned test vectors  " << mean(learned_tv_amg_iter) << " +- " << standard_deviation(learned_tv_amg_iter) << std::endl;
+    //std::cout << "Mean iteration count for smoothed test vectors " << mean(smooth_tv_amg_iter) << " +- " << standard_deviation(smooth_tv_amg_iter) << std::endl;
+    //std::cout << "Mean iteration count for random test vectors   " << mean(random_tv_amg_iter) << " +- " << standard_deviation(random_tv_amg_iter) << std::endl;
+    //std::cout << "Mean iteration count for learned test vectors  " << mean(learned_tv_amg_iter) << " +- " << standard_deviation(learned_tv_amg_iter) << std::endl;
 
     return 0;
 }

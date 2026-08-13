@@ -100,7 +100,7 @@ public:
             2, //two spins
             LevelV::Colors[level],
             this),
-         gmres_l(LevelV::Nsites[level], LevelV::DOF[level],
+         gmres_l(LevelV::Nsites[level], 2*LevelV::DOF[level],
             LevelV::GMRES_restart_len[level],
             LevelV::GMRES_restarts[level],
             LevelV::GMRES_tol[level],

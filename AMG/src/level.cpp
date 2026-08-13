@@ -515,7 +515,7 @@ void Level::readMask(){
 	for(int nt=0; nt<Ntest; nt++){
 		std::ostringstream mask_file;
 		mask_file << config.mask_dir << "/b" << beta::beta << "_" << LV::Nx << "x" << LV::Nt 
-                    << "/" << config.m_dir << "/"
+                    << "/" << config.m_dir << "/conf"
                     << mlearning::confID << "_mask_tv" << nt << ".tv";
 		std::vector<spinor>mask(Ntest,
         spinor( Nsites, c_vector (DOF,0))); 

@@ -260,7 +260,7 @@ def mask_vectors(k_rank,block_x,block_t,which_mask,params_list):
     Nblocks = block_x*block_t
     x_elements, t_elements = Nx//block_x, Nt//block_t
     test_vectors = np.zeros((k_rank,2,Nx,Nt),dtype=complex)  
-    #test_vectors = np.zeros((NV,2,Nx,Nt),dtype=complex)  
+    masks = np.zeros((k_rank,2,Nx,Nt))  
     for blockID in range(Nblocks):
         dtv_spin0, dtv_spin1 = read_and_decompose(blockID,block_x,block_t,params_list)
         #Spin component 0
@@ -285,6 +285,7 @@ def mask_vectors(k_rank,block_x,block_t,which_mask,params_list):
             for tvID in range(k_rank):
             #for tvID in range(NV):
                 labels_2d = k_cluster(svd_vectors[spin],tvID)
+                masks[tvID,spin,tini:tfin,xini:xfin] = labels_2d
                 for x in range(x_elements):
                     for t in range(t_elements):
                         if which_mask == 0:
@@ -294,7 +295,7 @@ def mask_vectors(k_rank,block_x,block_t,which_mask,params_list):
                         else:
                              svd_vectors[spin][t,x,tvID] *= 1 #no mask 
                 test_vectors[tvID,spin,tini:tfin,xini:xfin] = svd_vectors[spin][:,:,tvID]
-    return test_vectors
+    return test_vectors, masks
 
 
 def save_vectors(masked_test_vectors,beta,Nx,Nt,m0_folder,nconf,k_rank,which_mask):
@@ -323,4 +324,18 @@ def save_vectors(masked_test_vectors,beta,Nx,Nt,m0_folder,nconf,k_rank,which_mas
                         Re = np.real(value)
                         Im = np.imag(value)
                         data = struct.pack(fmt, int(x), int(t), int(mu), float(Re), float(Im))
+                        f.write(data)
+
+def save_masks(masks,beta,Nx,Nt,m0_folder,nconf):
+    k_rank = masks.shape[0]
+    for tv in range(k_rank):
+        file_path = "masks/b{0}_{1}x{2}/{3}//conf{4}_mask_tv{5}.tv".format(beta,Nx,Nt,m0_folder,
+                        nconf,tv)
+        fmt = "<3i1d"
+        with open(file_path, "wb") as f:
+            for x in range(Nx):
+                for t in range(Nt):
+                    for mu in range(2):
+                        value = masks[tv,mu,t,x]
+                        data = struct.pack(fmt, int(x), int(t), int(mu), float(value))
                         f.write(data)

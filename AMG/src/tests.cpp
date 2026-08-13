@@ -99,7 +99,7 @@ void Tests::multigrid(spinor& x, const bool print){
     AlgebraicMG AMG(GConf, m0,AMGV::nu1, AMGV::nu2);
     AMG.setUpPhase(AMGV::Nit);
     //AMG.testSetUp();
-    AMG.applyMultilevel(100, rhs,x,1e-10,true);
+    //AMG.applyMultilevel(100, rhs,x,1e-10,true);
 }
 
 void Tests::check_solution(const spinor& x_sol){
